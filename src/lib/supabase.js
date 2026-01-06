@@ -1,18 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Obtener las variables de entorno desde el archivo .env.local
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Verifica si las variables están configuradas correctamente
+// ✅ NO tirar error en build. Mejor warn.
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error("supabaseUrl and supabaseKey are required");
+  console.warn("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
 
-// Crear cliente de Supabase
-const supabase = createClient(supabaseUrl, supabaseKey);
+// ✅ Creamos cliente solo si existen (evita crash en build)
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : (null as any);
 
 export default supabase;
-
-console.log("Supabase URL:", supabaseUrl);
-console.log("Supabase Key:", supabaseKey);
