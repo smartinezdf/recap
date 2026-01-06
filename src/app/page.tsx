@@ -736,7 +736,7 @@ export default function Page() {
                             )}
                           </div>
 
-                          <div className="mt-3 text-xs text-white/50">Compártelo en tus redes y etiquétanos ✨</div>
+                          <div className="mt-3 text-xs text-white/50">Compártelo y etiquétanos </div>
                         </Glass>
                       );
                     })}
