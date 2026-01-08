@@ -419,7 +419,7 @@ export default function Page() {
                   </h3>
 
                   <p className="mt-4 text-white/75 leading-relaxed">
-                    Recap es tecnología inteligente para canchas deportivas. Graba de forma continua y, con un solo botón, guarda tu mejor jugada para que la encuentres y la descargues al instante.
+                    Recap es tecnología inteligente para canchas deportivas. Graba de forma continua y, con un solo botón, guarda tu jugada más reciente para que la encuentres y la descargues al instante.
                   </p>
 
                   <p className="mt-4 text-white/75 leading-relaxed">
