@@ -28,14 +28,24 @@ export async function GET(req: Request) {
   // 📡 Leemos el último heartbeat de cada device
   const { data, error } = await supabase
     .from("latest_device_heartbeat")
-    .select("device_key, ts");
+    .select("device_key, ts, camera_ok, buffer_ok, button_ok, last_segment_age_sec, disk_free_gb, cpu_temp_c");
 
   if (error) {
     return new Response("Supabase error", { status: 500 });
   }
 
   const now = Date.now();
-  const offline: { device: string; ageSec: number }[] = [];
+  const offline: {
+  device: string;
+  ageSec: number;
+  camera_ok?: boolean;
+  buffer_ok?: boolean;
+  button_ok?: boolean;
+  last_segment_age_sec?: number | null;
+  disk_free_gb?: number | null;
+  cpu_temp_c?: number | null;
+}[] = [];
+
 
   for (const row of data ?? []) {
     const ageSec = Math.floor(
@@ -46,6 +56,12 @@ export async function GET(req: Request) {
       offline.push({
         device: row.device_key,
         ageSec,
+        camera_ok: row.camera_ok,
+        buffer_ok: row.buffer_ok,
+        button_ok: row.button_ok,
+        last_segment_age_sec: row.last_segment_age_sec,
+        disk_free_gb: row.disk_free_gb,
+        cpu_temp_c: row.cpu_temp_c,
       });
     }
   }
@@ -108,6 +124,14 @@ export async function GET(req: Request) {
       margin-top: 16px;
       font-size: 13px;
       color: #6b7280;
+
+    .badges { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.badge { font-size:12px; padding:6px 10px; border-radius:999px; font-weight:600; }
+.good { background:#dcfce7; color:#166534; }
+.warn { background:#fee2e2; color:#991b1b; }
+.gray { background:#e5e7eb; color:#111827; }
+.meta { margin-top:6px; font-size:12px; color:#6b7280; }
+
     }
   </style>
 </head>
@@ -129,7 +153,16 @@ export async function GET(req: Request) {
               <div class="device">
                 🔴 <strong>${d.device}</strong><br/>
                 Last heartbeat: ${Math.floor(d.ageSec / 60)} min ago
-              </div>
+                  <div class="badges">
+    <span class="badge ${d.camera_ok ? "good" : "warn"}">Camera: ${d.camera_ok ? "OK" : "BAD"}</span>
+    <span class="badge ${d.buffer_ok ? "good" : "warn"}">Buffer: ${d.buffer_ok ? "OK" : "BAD"}</span>
+    <span class="badge ${d.button_ok ? "good" : "warn"}">Button: ${d.button_ok ? "OK" : "BAD"}</span>
+  </div>
+
+  <div class="meta">
+    seg_age: ${d.last_segment_age_sec ?? "—"}s · disk: ${d.disk_free_gb ?? "—"}GB · temp: ${d.cpu_temp_c ?? "—"}°C
+  </div>
+</div>
             `
             )
             .join("")
