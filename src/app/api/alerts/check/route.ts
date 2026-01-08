@@ -58,5 +58,84 @@ export async function GET(req: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, offline });
-}
+const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recap – System Status</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f7f7f7;
+      padding: 40px;
+    }
+    .card {
+      max-width: 520px;
+      margin: auto;
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+    .ok {
+      color: #15803d;
+      background: #dcfce7;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .bad {
+      color: #991b1b;
+      background: #fee2e2;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎾 Recap – System Status</h1>
+
+    ${
+      offline.length === 0
+        ? `<div class="ok">✅ All systems online</div>`
+        : `<div class="bad">⚠️ ${offline.length} device(s) offline</div>`
+    }
+
+    ${offline
+      .map(
+        (d) => `<div class="item">🔴 ${d}</div>`
+      )
+      .join("")}
+
+    <div class="muted">
+      Last check: ${new Date().toLocaleString()}<br/>
+      Threshold: offline if no heartbeat &gt; 10 min
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+return new Response(html, {
+  headers: { "Content-Type": "text/html" },
+});
+
