@@ -1,178 +1,219 @@
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * Creamos un cliente de Supabase con SERVICE ROLE
- * Esto corre SOLO en el server (Vercel)
- */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-/**
- * GET /api/alerts/check
- * Protegido con ?key=ALERT_CRON_KEY
- */
-export async function GET(req: Request) {
-  // 🔐 Seguridad básica: key privada en la URL
-  const { searchParams } = new URL(req.url);
-  const key = searchParams.get("key");
+type HBRow = {
+  device_key: string;
+  ts: string;
+  camera_ok: boolean | null;
+  buffer_ok: boolean | null;
+  button_ok: boolean | null;
+  last_segment_age_sec: number | null;
+  disk_free_gb: number | null;
+  cpu_temp_c: number | null;
+  notes: string | null;
+};
 
+function minutesAgo(tsIso: string) {
+  const ageMs = Date.now() - new Date(tsIso).getTime();
+  return Math.max(0, Math.floor(ageMs / 60000));
+}
+
+function secAgo(tsIso: string) {
+  const ageMs = Date.now() - new Date(tsIso).getTime();
+  return Math.max(0, Math.floor(ageMs / 1000));
+}
+
+function pill(ok: boolean, label: string) {
+  const cls = ok ? "pill ok" : "pill bad";
+  const txt = ok ? `${label}: OK` : `${label}: FAIL`;
+  return `<span class="${cls}">${txt}</span>`;
+}
+
+function fmt(v: any, suffix = "") {
+  if (v === null || v === undefined) return "—";
+  return `${v}${suffix}`;
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+
+  // 🔐 Protección
+  const key = searchParams.get("key");
   if (key !== process.env.ALERT_CRON_KEY) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // ⏱️ Regla: offline si no hay heartbeat en > 10 min
-  const STALE_SECONDS = 10 * 60;
+  // Filtro por device (para futuro multi-cancha)
+  const onlyDevice = searchParams.get("device")?.trim() || "";
 
-  // 📡 Leemos el último heartbeat de cada device
+  // Thresholds
+  const OFFLINE_MIN = 10;
+  const SEG_STUCK_SEC = 12;
+  const HOT_CPU_C = 80;
+  const LOW_DISK_GB = 2;
+
   const { data, error } = await supabase
     .from("latest_device_heartbeat")
-    .select("device_key, ts, camera_ok, buffer_ok, button_ok, last_segment_age_sec, disk_free_gb, cpu_temp_c");
+    .select(
+      "device_key, ts, camera_ok, buffer_ok, button_ok, last_segment_age_sec, disk_free_gb, cpu_temp_c, notes"
+    );
 
   if (error) {
     return new Response("Supabase error", { status: 500 });
   }
 
-  const now = Date.now();
-  const offline: {
-  device: string;
-  ageSec: number;
-  camera_ok?: boolean;
-  buffer_ok?: boolean;
-  button_ok?: boolean;
-  last_segment_age_sec?: number | null;
-  disk_free_gb?: number | null;
-  cpu_temp_c?: number | null;
-}[] = [];
+  let rows = (data as HBRow[]) || [];
+  rows = rows.sort((a, b) => a.device_key.localeCompare(b.device_key));
 
-
-  for (const row of data ?? []) {
-    const ageSec = Math.floor(
-      (now - new Date(row.ts).getTime()) / 1000
-    );
-
-    if (ageSec > STALE_SECONDS) {
-      offline.push({
-        device: row.device_key,
-        ageSec,
-        camera_ok: row.camera_ok,
-        buffer_ok: row.buffer_ok,
-        button_ok: row.button_ok,
-        last_segment_age_sec: row.last_segment_age_sec,
-        disk_free_gb: row.disk_free_gb,
-        cpu_temp_c: row.cpu_temp_c,
-      });
-    }
+  if (onlyDevice) {
+    rows = rows.filter((r) => r.device_key === onlyDevice);
   }
 
-  /**
-   * =========================
-   * HTML VISUAL (STATUS PAGE)
-   * =========================
-   */
+  let online = 0;
+  let offline = 0;
+  let issuesTotal = 0;
+
+  const cards = rows.map((r) => {
+    const min = minutesAgo(r.ts);
+    const sec = secAgo(r.ts);
+    const isOffline = min > OFFLINE_MIN;
+
+    if (isOffline) offline++;
+    else online++;
+
+    const cameraOk = !isOffline && (r.camera_ok ?? false);
+    const bufferOk = !isOffline && (r.buffer_ok ?? false);
+    const buttonOk = !isOffline && (r.button_ok ?? false);
+
+    const issues: string[] = [];
+
+    if (isOffline) {
+      issues.push(`Sin heartbeat por ${min} minutos (DEVICE OFFLINE).`);
+    } else {
+      if (r.last_segment_age_sec !== null && r.last_segment_age_sec > SEG_STUCK_SEC) {
+        issues.push(`Buffer o cámara pegado (seg_age=${r.last_segment_age_sec}s).`);
+      }
+      if (!cameraOk) issues.push("Camera FAIL.");
+      if (!bufferOk) issues.push("Buffer FAIL.");
+      if (!buttonOk) issues.push("Button FAIL.");
+      if (r.cpu_temp_c !== null && r.cpu_temp_c >= HOT_CPU_C) {
+        issues.push(`CPU caliente (${r.cpu_temp_c}°C).`);
+      }
+      if (r.disk_free_gb !== null && r.disk_free_gb <= LOW_DISK_GB) {
+        issues.push(`Disco bajo (${r.disk_free_gb} GB).`);
+      }
+      if (r.notes) issues.push(`Nota: ${r.notes}`);
+    }
+
+    issuesTotal += issues.length;
+
+    const statusBadge = isOffline
+      ? `<span class="status offline">OFFLINE</span>`
+      : `<span class="status online">ONLINE</span>`;
+
+    const issuesHtml =
+      issues.length === 0
+        ? `<div class="issues none">Sin issues ✅</div>`
+        : `<ul class="issues">${issues.map((x) => `<li>${x}</li>`).join("")}</ul>`;
+
+    return `
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="title">${r.device_key}</div>
+            <div class="sub">Último heartbeat: ${min} min (${sec}s)</div>
+          </div>
+          ${statusBadge}
+        </div>
+
+        <div class="pills">
+          ${pill(cameraOk, "Camera")}
+          ${pill(bufferOk, "Buffer")}
+          ${pill(buttonOk, "Button")}
+          <span class="pill gray">seg_age: ${fmt(r.last_segment_age_sec, "s")}</span>
+          <span class="pill gray">disk: ${fmt(r.disk_free_gb, " GB")}</span>
+          <span class="pill gray">cpu: ${fmt(r.cpu_temp_c, "°C")}</span>
+        </div>
+
+        ${issuesHtml}
+
+        <div class="links">
+          <a href="?key=${encodeURIComponent(key!)}&device=${encodeURIComponent(
+            r.device_key
+          )}">Ver solo este device</a>
+          <span class="dot">•</span>
+          <a href="?key=${encodeURIComponent(key!)}">Ver todos</a>
+        </div>
+      </div>
+    `;
+  });
+
+  // 🕒 Hora Caracas
+  const nowCaracas = new Date().toLocaleString("es-VE", {
+    timeZone: "America/Caracas",
+    hour12: true,
+  });
+
   const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Recap – System Status</title>
+  <title>Recap – Monitoring</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
-      padding: 40px 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f3f4f6;
+      padding: 28px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: #0b0f17;
+      color: #fff;
     }
+    .wrap { max-width: 980px; margin: auto; }
+    h1 { margin: 0; font-size: 22px; }
+    .meta { color: #aaa; font-size: 13px; margin-top: 6px; }
+    .grid { display: grid; gap: 12px; }
     .card {
-      max-width: 520px;
-      margin: auto;
-      background: white;
-      border-radius: 14px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 14px;
     }
-    h1 {
-      margin: 0 0 16px;
-      font-size: 22px;
+    .row { display: flex; justify-content: space-between; }
+    .title { font-weight: 800; }
+    .sub { color: #aaa; font-size: 12px; }
+    .status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
     }
-    .ok {
-      background: #dcfce7;
-      color: #166534;
-      padding: 12px;
-      border-radius: 10px;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-    .bad {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 12px;
-      border-radius: 10px;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-    .device {
-      padding: 12px;
-      border-bottom: 1px solid #eee;
-    }
-    .device:last-child {
-      border-bottom: none;
-    }
-    .muted {
-      margin-top: 16px;
-      font-size: 13px;
-      color: #6b7280;
-
-    .badges { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
-.badge { font-size:12px; padding:6px 10px; border-radius:999px; font-weight:600; }
-.good { background:#dcfce7; color:#166534; }
-.warn { background:#fee2e2; color:#991b1b; }
-.gray { background:#e5e7eb; color:#111827; }
-.meta { margin-top:6px; font-size:12px; color:#6b7280; }
-
-    }
+    .online { color: #22c55e; background: rgba(34,197,94,0.15); }
+    .offline { color: #ef4444; background: rgba(239,68,68,0.15); }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .pill { font-size: 12px; padding: 6px 10px; border-radius: 999px; }
+    .ok { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .bad { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .gray { background: rgba(255,255,255,0.1); }
+    .issues { font-size: 12px; margin-top: 8px; }
+    .issues.none { color: #22c55e; }
+    .links { margin-top: 8px; font-size: 12px; }
+    a { color: #bbb; text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🎾 Recap – System Status</h1>
+  <div class="wrap">
+    <h1>🎾 Recap Monitoring</h1>
+    <div class="meta">
+      Hora Caracas: ${nowCaracas}<br/>
+      Check cada 5 min · Offline &gt; 10 min
+    </div>
 
-    ${
-      offline.length === 0
-        ? `<div class="ok">✅ All devices online</div>`
-        : `<div class="bad">⚠️ ${offline.length} device(s) offline</div>`
-    }
-
-    ${
-      offline.length > 0
-        ? offline
-            .map(
-              (d) => `
-              <div class="device">
-                🔴 <strong>${d.device}</strong><br/>
-                Last heartbeat: ${Math.floor(d.ageSec / 60)} min ago
-                  <div class="badges">
-    <span class="badge ${d.camera_ok ? "good" : "warn"}">Camera: ${d.camera_ok ? "OK" : "BAD"}</span>
-    <span class="badge ${d.buffer_ok ? "good" : "warn"}">Buffer: ${d.buffer_ok ? "OK" : "BAD"}</span>
-    <span class="badge ${d.button_ok ? "good" : "warn"}">Button: ${d.button_ok ? "OK" : "BAD"}</span>
-  </div>
-
-  <div class="meta">
-    seg_age: ${d.last_segment_age_sec ?? "—"}s · disk: ${d.disk_free_gb ?? "—"}GB · temp: ${d.cpu_temp_c ?? "—"}°C
-  </div>
-</div>
-            `
-            )
-            .join("")
-        : ""
-    }
-
-    <div class="muted">
-      Check interval: every 5 minutes<br/>
-      Offline threshold: &gt; 10 minutes<br/>
-      Last check: ${new Date().toLocaleString()}
+    <div class="grid">
+      ${cards.join("")}
     </div>
   </div>
 </body>
@@ -180,8 +221,6 @@ export async function GET(req: Request) {
 `;
 
   return new Response(html, {
-    headers: {
-      "Content-Type": "text/html",
-    },
+    headers: { "Content-Type": "text/html" },
   });
 }
