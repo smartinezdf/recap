@@ -302,7 +302,7 @@ export default function Page() {
             </h1>
 
             <p className="mt-7 text-white/70 sm:text-lg leading-relaxed max-w-3xl mx-auto">
-              Tecnología inteligente diseñada para canchas deportivas. Presiona un botón y guarda tu mejor jugada.
+              Tecnología inteligente diseñada para canchas deportivas. Presiona un botón y guarda tus mejores jugadas.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
