@@ -1,64 +1,61 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Creamos un cliente de Supabase con SERVICE ROLE
+ * Esto corre SOLO en el server (Vercel)
+ */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function sendEmail(subject: string, html: string) {
-  const resp = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: process.env.ALERT_FROM_EMAIL,
-      to: process.env.ALERT_TO_EMAIL,
-      subject,
-      html,
-    }),
-  });
-
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`Resend error: ${resp.status} ${t}`);
-  }
-}
-
+/**
+ * GET /api/alerts/check
+ * Protegido con ?key=ALERT_CRON_KEY
+ */
 export async function GET(req: Request) {
+  // 🔐 Seguridad básica: key privada en la URL
   const { searchParams } = new URL(req.url);
-  if (searchParams.get("key") !== process.env.ALERT_CRON_KEY) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  const key = searchParams.get("key");
+
+  if (key !== process.env.ALERT_CRON_KEY) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  const staleSeconds = 10 * 60;
+  // ⏱️ Regla: offline si no hay heartbeat en > 10 min
+  const STALE_SECONDS = 10 * 60;
 
-  const { data: rows, error } = await supabase
+  // 📡 Leemos el último heartbeat de cada device
+  const { data, error } = await supabase
     .from("latest_device_heartbeat")
-    .select("device_key,ts");
+    .select("device_key, ts");
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    return new Response("Supabase error", { status: 500 });
   }
 
   const now = Date.now();
-  const offline: string[] = [];
+  const offline: { device: string; ageSec: number }[] = [];
 
-  for (const r of rows || []) {
-    const ageSec = (now - new Date(r.ts).getTime()) / 1000;
-    if (ageSec > staleSeconds) offline.push(`${r.device_key} (${Math.round(ageSec)}s)`);
-  }
-
-  if (offline.length) {
-    await sendEmail(
-      "Recap alert: device offline",
-      `<p>Offline > 10 min:</p><ul>${offline.map(x => `<li>${x}</li>`).join("")}</ul>`
+  for (const row of data ?? []) {
+    const ageSec = Math.floor(
+      (now - new Date(row.ts).getTime()) / 1000
     );
+
+    if (ageSec > STALE_SECONDS) {
+      offline.push({
+        device: row.device_key,
+        ageSec,
+      });
+    }
   }
 
-const html = `
+  /**
+   * =========================
+   * HTML VISUAL (STATUS PAGE)
+   * =========================
+   */
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,46 +64,50 @@ const html = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
+      margin: 0;
+      padding: 40px 16px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f7f7f7;
-      padding: 40px;
+      background: #f3f4f6;
     }
     .card {
       max-width: 520px;
       margin: auto;
       background: white;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 24px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
     h1 {
-      margin-top: 0;
+      margin: 0 0 16px;
       font-size: 22px;
     }
     .ok {
-      color: #15803d;
       background: #dcfce7;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 12px;
+      color: #166534;
+      padding: 12px;
+      border-radius: 10px;
       font-weight: 600;
+      margin-bottom: 16px;
     }
     .bad {
-      color: #991b1b;
       background: #fee2e2;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 12px;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 10px;
       font-weight: 600;
+      margin-bottom: 16px;
     }
-    .item {
-      padding: 10px;
+    .device {
+      padding: 12px;
       border-bottom: 1px solid #eee;
     }
+    .device:last-child {
+      border-bottom: none;
+    }
     .muted {
-      color: #6b7280;
-      font-size: 13px;
       margin-top: 16px;
+      font-size: 13px;
+      color: #6b7280;
     }
   </style>
 </head>
@@ -116,26 +117,38 @@ const html = `
 
     ${
       offline.length === 0
-        ? `<div class="ok">✅ All systems online</div>`
+        ? `<div class="ok">✅ All devices online</div>`
         : `<div class="bad">⚠️ ${offline.length} device(s) offline</div>`
     }
 
-    ${offline
-      .map(
-        (d) => `<div class="item">🔴 ${d}</div>`
-      )
-      .join("")}
+    ${
+      offline.length > 0
+        ? offline
+            .map(
+              (d) => `
+              <div class="device">
+                🔴 <strong>${d.device}</strong><br/>
+                Last heartbeat: ${Math.floor(d.ageSec / 60)} min ago
+              </div>
+            `
+            )
+            .join("")
+        : ""
+    }
 
     <div class="muted">
-      Last check: ${new Date().toLocaleString()}<br/>
-      Threshold: offline if no heartbeat &gt; 10 min
+      Check interval: every 5 minutes<br/>
+      Offline threshold: &gt; 10 minutes<br/>
+      Last check: ${new Date().toLocaleString()}
     </div>
   </div>
 </body>
 </html>
 `;
 
-return new Response(html, {
-  headers: { "Content-Type": "text/html" },
-});
-
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html",
+    },
+  });
+}
