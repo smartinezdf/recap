@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Call alerts endpoint
         run: |
-          curl -FsS "${{ secrets.ALERTS_URL }}"
+          curl -fsS "${{ secrets.ALERTS_URL }}"
