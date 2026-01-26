@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "Recap - Revive tus jugadas",
   description: "Sistema inteligente para capturar tus mejores momentos en la cancha",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+};
 };
 
 export default function RootLayout({
