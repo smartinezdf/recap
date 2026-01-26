@@ -16,14 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <head>
-        {/* Tab favicon */}
-        <link rel="icon" href="/Recap.png" />
-
-        {/* iPhone/iPad: Add to Home Screen */}
-        <link rel="apple-touch-icon" href="/Recap.png" />
-      </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+      </body>
     </html>
   );
 }
