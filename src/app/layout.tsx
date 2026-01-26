@@ -1,24 +1,29 @@
-import React from 'react';
-import { Inter } from 'next/font/google';
-import './globals.css'; // Si tienes estilos globales
+import React from "react";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Recap - Revive tus jugadas',
-  description: 'Sistema inteligente para capturar tus mejores momentos en la cancha',
-  icons:{
-    icon: "/Recap.png",
-  },
+  title: "Recap - Revive tus jugadas",
+  description: "Sistema inteligente para capturar tus mejores momentos en la cancha",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es">
-      <head />
-      <body className={inter.className}>
-        {children} {/* Aquí se renderiza el contenido de tus páginas */}
-      </body>
+      <head>
+        {/* Tab favicon */}
+        <link rel="icon" href="/Recap.png" />
+
+        {/* iPhone/iPad: Add to Home Screen */}
+        <link rel="apple-touch-icon" href="/Recap.png" />
+      </head>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
