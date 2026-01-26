@@ -335,13 +335,17 @@ export default function Page() {
             <Glass className="p-6 sm:p-7">
               <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
                 {/* Cuando tengas el video, reemplaza este div por <video ... /> */}
-                <div className="aspect-video grid place-items-center">
-                  <div className="text-center px-6">
-                    <div className="text-sm font-semibold">Video demo (próximamente)</div>
-                    <div className="mt-2 text-xs text-white/60">Muestra real jugando + el momento del botón.</div>
-                  </div>
-                </div>
-              </div>
+                <video
+                  src="/video3.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="aspect-video w-full object-cover"
+                  controls={false}
+                 />
+               </div>
             </Glass>
           </div>
         </Shell>
