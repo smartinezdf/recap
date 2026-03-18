@@ -704,7 +704,7 @@ export default function Page() {
                             <video
                               className="w-full rounded-2xl border border-white/10"
                               controls
-                              preload="metadata"
+                              preload="none"
                               src={clip.video_url}
                             />
                           ) : (
