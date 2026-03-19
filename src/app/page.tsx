@@ -28,19 +28,31 @@ function clsx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(" ");
 }
 
-function formatSlotRangeLabel(timeStr: string) {
+function formatTimeLabel(timeStr: string) {
   const [hhStr, mmStr] = timeStr.split(":");
   const hh = parseInt(hhStr, 10);
   const mm = parseInt(mmStr, 10);
 
-  const startMinutes = hh * 60 + mm;
-  const endMinutes = startMinutes + 90;
-
-  const endH = Math.floor(endMinutes / 60) % 24;
-  const endM = endMinutes % 60;
-
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(hh)}:${pad(mm)} - ${pad(endH)}:${pad(endM)}`;
+  return `${pad(hh)}:${pad(mm)}`;
+}
+
+function formatSlotRangeLabel(timeStr: string, nextTimeStr?: string) {
+  const start = formatTimeLabel(timeStr);
+
+  // 👇 caso normal (usa siguiente slot)
+  if (nextTimeStr) {
+    const end = formatTimeLabel(nextTimeStr);
+    return `${start} - ${end}`;
+  }
+
+  // 👇 caso último slot (tu caso: 21:30 → 23:30)
+  if (timeStr === "21:30:00") {
+    return `${start} - 23:30`;
+  }
+
+  // fallback
+  return start;
 }
 
 function prettyFilenameFromISO(iso: string) {
@@ -210,8 +222,10 @@ export default function Page() {
 
   const selectedTimeLabel = useMemo(() => {
     if (!selectedTime) return null;
-    return formatSlotRangeLabel(selectedTime.time_slot);
-  }, [selectedTime]);
+    const index = clubTimes.findIndex((t) => t.id === selectedTime.id);
+    const nextTime = clubTimes[index + 1]?.time_slot;
+    return formatSlotRangeLabel(selectedTime.time_slot, nextTime);
+  }, [selectedTime, clubTimes]);
 
   const step = useMemo(() => {
     if (!selectedClub) return 1;
@@ -649,7 +663,8 @@ export default function Page() {
                     <Glass className="mt-4 p-5 text-sm text-white/60">No hay horarios configurados para este club.</Glass>
                   ) : (
                     <div className="mt-4 flex flex-wrap gap-3">
-                      {clubTimes.map((t) => {
+                      {clubTimes.map((t, index) => {
+                        const nextTime = clubTimes[index + 1]?.time_slot;
                         const isSelected = selectedTime?.id === t.id;
                         return (
                           <button
@@ -663,7 +678,7 @@ export default function Page() {
                             className="rounded-full border px-5 py-3 text-sm font-semibold transition border-white/10 bg-white/[0.07] hover:bg-white/[0.10]"
                             style={isSelected ? { boxShadow: `0 0 0 2px ${ACCENT}88` } : undefined}
                           >
-                            {formatSlotRangeLabel(t.time_slot)}
+                            {formatSlotRangeLabel(t.time_slot, nextTime)}
                           </button>
                         );
                       })}
