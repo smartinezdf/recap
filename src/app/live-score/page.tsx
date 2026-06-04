@@ -134,11 +134,9 @@ export default function LiveScorePage() {
             className="mb-3 text-sm font-bold uppercase tracking-[0.3em]"
             style={{ color: ACCENT }}
           >
-            Partidos de hoy
-          </p>
 
           <h2 className="text-4xl font-black md:text-6xl">
-            Selecciona tu cancha.
+            Partidos de hoy
           </h2>
 
           <p className="mt-4 max-w-2xl text-zinc-400">
@@ -202,7 +200,7 @@ export default function LiveScorePage() {
 
         {courtMatches.length === 0 && !loading && (
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-            No hay scores disponibles para {selectedCourt} en este momento.
+            No hay score disponible para {selectedCourt} en este momento.
           </div>
         )}
 
