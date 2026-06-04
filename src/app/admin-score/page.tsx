@@ -388,71 +388,52 @@ function LiveScorePreview({
   compact?: boolean;
 }) {
   const showSet3 = Boolean(match.sets[2]);
+  const thirdSetLabel =
+    match.thirdSetMode === "Super Tiebreak" ? "TB" : "S3";
 
   return (
-    <div
-      className={`overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl ${
-        compact ? "p-4" : ""
-      }`}
-    >
-      {!compact && (
-        <div className="flex items-start justify-between border-b border-white/10 p-6">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-green-400">
-                {match.status}
-              </span>
-            </div>
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl">
+      <div className="flex items-start justify-between border-b border-white/10 p-6">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-green-400">
+            {match.status}
+          </p>
 
-            <h3 className="text-3xl font-black">
-              {match.court || "Court"} · {match.tournament || "Tournament"}
-            </h3>
+          <h3 className={compact ? "text-xl font-black" : "text-3xl font-black"}>
+            {match.court || "Court"} · {match.tournament || "Tournament"}
+          </h3>
 
-            <p className="text-zinc-400">
-              {match.round || "Round"} · {match.time || "Time"}
-            </p>
-          </div>
-
-          <div className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-sm text-zinc-300">
-            Live Score
-          </div>
+          <p className="text-zinc-400">
+            {match.round || "Round"} · {match.time || "Time"}
+          </p>
         </div>
-      )}
 
-      <div
-        className={`mb-4 flex flex-wrap gap-2 text-xs font-bold text-zinc-300 ${
-          compact ? "" : "border-b border-white/10 p-5"
-        }`}
-      >
-        <span className="rounded-full bg-white/10 px-3 py-1">
-          Set 1: {match.sets[0]?.a ?? "0"}-{match.sets[0]?.b ?? "0"}
-        </span>
-
-        <span className="rounded-full bg-white/10 px-3 py-1">
-          Set 2: {match.sets[1]?.a ?? "0"}-{match.sets[1]?.b ?? "0"}
-        </span>
-
-        {showSet3 && (
-          <span className="rounded-full bg-white/10 px-3 py-1">
-            {match.thirdSetMode === "Super Tiebreak" ? "Super TB" : "Set 3"}:{" "}
-            {match.sets[2]?.a ?? "0"}-{match.sets[2]?.b ?? "0"}
-          </span>
-        )}
-
-        <span className="rounded-full bg-green-400 px-3 py-1 text-black">
-          Game: {match.gameA}-{match.gameB}
+        <span className="rounded-full border border-green-400/40 bg-green-400/10 px-4 py-2 text-sm font-bold text-green-400">
+          Live Score
         </span>
       </div>
 
-      <div className={compact ? "space-y-2" : "space-y-3 p-4"}>
+      <div
+        className={`grid gap-3 border-b border-white/10 px-6 py-4 text-xs uppercase tracking-[0.25em] text-zinc-500 ${
+          showSet3
+            ? "grid-cols-[1fr_56px_56px_56px_70px]"
+            : "grid-cols-[1fr_56px_56px_70px]"
+        }`}
+      >
+        <div>Team</div>
+        <div className="text-center">S1</div>
+        <div className="text-center">S2</div>
+        {showSet3 && <div className="text-center">{thirdSetLabel}</div>}
+        <div className="text-center">Game</div>
+      </div>
+
+      <div className={compact ? "space-y-2 p-3" : "space-y-3 p-5"}>
         <PublicScoreRow
           name={match.teamA || "Team A"}
           serving={match.serving === "A"}
           sets={match.sets.map((s) => s.a)}
           game={match.gameA}
           showSet3={showSet3}
-          compact={compact}
         />
 
         <PublicScoreRow
@@ -461,8 +442,51 @@ function LiveScorePreview({
           sets={match.sets.map((s) => s.b)}
           game={match.gameB}
           showSet3={showSet3}
-          compact={compact}
         />
+      </div>
+    </div>
+  );
+}
+
+function PublicScoreRow({
+  name,
+  serving,
+  sets,
+  game,
+  showSet3,
+}: {
+  name: string;
+  serving: boolean;
+  sets: string[];
+  game: string;
+  showSet3: boolean;
+}) {
+  return (
+    <div
+      className={`grid items-center gap-3 rounded-3xl bg-black/45 px-6 py-6 text-xl ${
+        showSet3
+          ? "grid-cols-[1fr_56px_56px_56px_70px]"
+          : "grid-cols-[1fr_56px_56px_70px]"
+      }`}
+    >
+      <div className="flex items-center gap-4 font-black">
+        <span
+          className={`h-3.5 w-3.5 rounded-full ${
+            serving ? "bg-green-400" : "bg-transparent"
+          }`}
+        />
+        {name}
+      </div>
+
+      <div className="text-center text-2xl font-black">{sets[0] ?? "0"}</div>
+      <div className="text-center text-2xl font-black">{sets[1] ?? "0"}</div>
+
+      {showSet3 && (
+        <div className="text-center text-2xl font-black">{sets[2] ?? "0"}</div>
+      )}
+
+      <div className="text-center text-3xl font-black text-green-400">
+        {game}
       </div>
     </div>
   );
