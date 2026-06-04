@@ -5,7 +5,6 @@ import Link from "next/link";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31"; // ✅ Verde marca (RGB 63,205,49)
-const [menuOpen, setMenuOpen] = useState(false);
 
 type Club = { id: string; name: string; logo_url?: string | null };
 type Court = { id: string; club_id: string; name: string };
@@ -146,6 +145,7 @@ function StepPill({
 }
 
 export default function Page() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [courts, setCourts] = useState<Court[]>([]);
   const [clubTimes, setClubTimes] = useState<ClubTimeRow[]>([]);
@@ -332,7 +332,7 @@ export default function Page() {
               </a>
             </div>
           </div>
-    )}
+        )}
   </header>
 
       {/* HERO (updated copy + cleaner) */}
