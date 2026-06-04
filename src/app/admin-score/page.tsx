@@ -387,9 +387,7 @@ export default function AdminScorePage() {
             </div>
 
             {activeMatch && (
-              <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_420px]">
-                <LiveScorePreview match={activeMatch} />
-
+              <div className="mt-8">
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl">
                   <div className="mb-6">
                     <p className="text-sm uppercase tracking-[0.3em] text-green-400">
