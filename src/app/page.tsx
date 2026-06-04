@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31"; // ✅ Verde marca (RGB 63,205,49)
+const [menuOpen, setMenuOpen] = useState(false);
 
 type Club = { id: string; name: string; logo_url?: string | null };
 type Court = { id: string; club_id: string; name: string };
@@ -288,20 +290,50 @@ export default function Page() {
         <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-[34rem] rounded-full bg-white/10 blur-3xl" />
       </div>
 
-      {/* Header (logo bigger) */}
-      <header className="sticky top-0 z-50 bg-white border-b border-zinc-200">
-        <a href="#top" className="block">
-          <Shell>
-            <div className="py-3 flex justify-center">
-              <img
-                src="/RecapLogo.png"
-                alt="Recap"
-                className="h-14 sm:h-16 object-contain cursor-pointer"
-              />
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white px-5 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-xl border border-zinc-200 px-4 py-3 text-xl text-black"
+          >
+            ☰
+          </button>
+            
+          <a href="#top" className="block">
+            <Shell>
+              <div className="py-3 flex justify-center">
+                <img
+                  src="/RecapLogo.png"
+                  alt="Recap"
+                  className="h-14 sm:h-16 object-contain cursor-pointer"
+                />
+              </div>
+            </Shell>
+          </a>
+        </div>
+        
+        {menuOpen && (
+          <div className="mt-4 border-t border-zinc-200 pt-4">
+            <div className="mx-auto max-w-7xl grid gap-3 md:grid-cols-2">
+              <a
+                href="/"
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+              >
+                Clips
+              </a>
+              
+              <a
+                href="/live-score"
+                className="rounded-2xl p-4 font-bold text-black"
+                style={{ backgroundColor: "#3FCD31" }}
+              >
+                Score en Vivo
+              </a>
             </div>
-          </Shell>
-        </a>
-      </header>
+          </div>
+    )}
+  </header>
 
       {/* HERO (updated copy + cleaner) */}
       <section className="relative">
