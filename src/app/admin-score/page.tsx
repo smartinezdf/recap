@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
+type MatchStatus = "Pending" | "In Progress" | "Finished";
+type ThirdSetMode = "Full 3rd Set" | "Super Tiebreak";
+
 type Match = {
   id: number;
   club: string;
@@ -12,6 +15,8 @@ type Match = {
   time: string;
   teamA: string;
   teamB: string;
+  status: MatchStatus;
+  thirdSetMode: ThirdSetMode;
   sets: { a: string; b: string }[];
   gameA: string;
   gameB: string;
@@ -20,27 +25,30 @@ type Match = {
 
 const gameOptions = ["0", "15", "30", "40", "AD", "GAME"];
 
+const emptyForm: Match = {
+  id: 0,
+  club: "",
+  court: "",
+  tournament: "",
+  round: "",
+  time: "",
+  teamA: "",
+  teamB: "",
+  status: "Pending",
+  thirdSetMode: "Full 3rd Set",
+  sets: [
+    { a: "0", b: "0" },
+    { a: "0", b: "0" },
+  ],
+  gameA: "0",
+  gameB: "0",
+  serving: "A",
+};
+
 export default function AdminScorePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [activeMatchId, setActiveMatchId] = useState<number | null>(null);
-
-  const [form, setForm] = useState<Match>({
-    id: Date.now(),
-    club: "",
-    court: "",
-    tournament: "",
-    round: "",
-    time: "",
-    teamA: "",
-    teamB: "",
-    sets: [
-      { a: "0", b: "0" },
-      { a: "0", b: "0" },
-    ],
-    gameA: "0",
-    gameB: "0",
-    serving: "A",
-  });
+  const [form, setForm] = useState<Match>(emptyForm);
 
   const activeMatch = matches.find((m) => m.id === activeMatchId);
 
@@ -52,14 +60,27 @@ export default function AdminScorePage() {
     const newMatch = { ...form, id: Date.now() };
     setMatches([...matches, newMatch]);
     setActiveMatchId(newMatch.id);
+    setForm(emptyForm);
   }
 
   function updateMatch(updated: Match) {
     setMatches(matches.map((m) => (m.id === updated.id ? updated : m)));
   }
 
+  function deleteMatch(id: number) {
+    const confirmed = window.confirm("Delete this match?");
+    if (!confirmed) return;
+
+    setMatches(matches.filter((m) => m.id !== id));
+
+    if (activeMatchId === id) {
+      setActiveMatchId(null);
+    }
+  }
+
   function addSet(match: Match) {
     if (match.sets.length >= 3) return;
+
     updateMatch({
       ...match,
       sets: [...match.sets, { a: "0", b: "0" }],
@@ -68,6 +89,7 @@ export default function AdminScorePage() {
 
   function removeSet(match: Match) {
     if (match.sets.length <= 1) return;
+
     updateMatch({
       ...match,
       sets: match.sets.slice(0, -1),
@@ -91,7 +113,10 @@ export default function AdminScorePage() {
             <h1 className="text-2xl font-black">Score Control</h1>
           </div>
 
-          <Link href="/live-score" className="rounded-full bg-green-400 px-5 py-3 font-bold text-black">
+          <Link
+            href="/live-score"
+            className="rounded-full bg-green-400 px-5 py-3 font-bold text-black"
+          >
             View Live Score
           </Link>
         </div>
@@ -116,6 +141,10 @@ export default function AdminScorePage() {
             >
               Save match
             </button>
+
+            <p className="text-sm text-zinc-500">
+              After saving, the form clears and the match appears on the right for live editing.
+            </p>
           </div>
         </div>
 
@@ -127,34 +156,101 @@ export default function AdminScorePage() {
 
           {matches.length === 0 && (
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-              Create a match first. After saving, you can edit score, serving team, games, and sets.
+              Create a match first. After saving, you can edit status, score, serving team, games, and sets.
             </div>
           )}
 
           <div className="grid gap-5">
             {matches.map((match) => (
-              <button
+              <div
                 key={match.id}
-                onClick={() => setActiveMatchId(match.id)}
-                className={`rounded-[2rem] border p-5 text-left transition ${
+                className={`rounded-[2rem] border p-5 transition ${
                   activeMatchId === match.id
                     ? "border-green-400 bg-green-400/10"
-                    : "border-white/10 bg-white/[0.06] hover:border-green-400/60"
+                    : "border-white/10 bg-white/[0.06]"
                 }`}
               >
-                <p className="text-sm text-green-400">{match.club} · {match.court}</p>
-                <h3 className="text-xl font-black">{match.teamA} vs {match.teamB}</h3>
-                <p className="text-zinc-400">{match.tournament} · {match.round} · {match.time}</p>
-              </button>
+                <button
+                  onClick={() => setActiveMatchId(match.id)}
+                  className="w-full text-left"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm text-green-400">
+                      {match.club || "Club"} · {match.court || "Court"}
+                    </p>
+
+                    <StatusBadge status={match.status} />
+                  </div>
+
+                  <h3 className="text-xl font-black">
+                    {match.teamA || "Team A"} vs {match.teamB || "Team B"}
+                  </h3>
+
+                  <p className="text-zinc-400">
+                    {match.tournament || "Tournament"} · {match.round || "Round"} · {match.time || "Time"}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => deleteMatch(match.id)}
+                  className="mt-4 rounded-full border border-red-400/40 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10"
+                >
+                  Delete match
+                </button>
+              </div>
             ))}
           </div>
 
           {activeMatch && (
             <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl">
               <div className="mb-6">
-                <p className="text-sm uppercase tracking-[0.3em] text-green-400">Editing</p>
-                <h2 className="text-3xl font-black">{activeMatch.teamA} vs {activeMatch.teamB}</h2>
-                <p className="text-zinc-400">{activeMatch.club} · {activeMatch.court}</p>
+                <p className="text-sm uppercase tracking-[0.3em] text-green-400">
+                  Editing
+                </p>
+                <h2 className="text-3xl font-black">
+                  {activeMatch.teamA} vs {activeMatch.teamB}
+                </h2>
+                <p className="text-zinc-400">
+                  {activeMatch.club} · {activeMatch.court}
+                </p>
+              </div>
+
+              <div className="mb-8">
+                <p className="mb-3 font-bold">Match status</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => updateMatch({ ...activeMatch, status })}
+                      className={`rounded-2xl px-5 py-4 font-bold ${
+                        activeMatch.status === status
+                          ? "bg-green-400 text-black"
+                          : "bg-white/10 text-white"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <p className="mb-3 font-bold">3rd set format</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => updateMatch({ ...activeMatch, thirdSetMode: mode })}
+                      className={`rounded-2xl px-5 py-4 font-bold ${
+                        activeMatch.thirdSetMode === mode
+                          ? "bg-green-400 text-black"
+                          : "bg-white/10 text-white"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="mb-8">
@@ -179,7 +275,9 @@ export default function AdminScorePage() {
                   <button
                     onClick={() => updateMatch({ ...activeMatch, serving: "A" })}
                     className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "A" ? "bg-green-400 text-black" : "bg-white/10"
+                      activeMatch.serving === "A"
+                        ? "bg-green-400 text-black"
+                        : "bg-white/10"
                     }`}
                   >
                     ● {activeMatch.teamA}
@@ -187,7 +285,9 @@ export default function AdminScorePage() {
                   <button
                     onClick={() => updateMatch({ ...activeMatch, serving: "B" })}
                     className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "B" ? "bg-green-400 text-black" : "bg-white/10"
+                      activeMatch.serving === "B"
+                        ? "bg-green-400 text-black"
+                        : "bg-white/10"
                     }`}
                   >
                     ● {activeMatch.teamB}
@@ -196,18 +296,27 @@ export default function AdminScorePage() {
               </div>
 
               <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="font-bold">Sets</p>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold">Sets</p>
+                    <p className="text-sm text-zinc-500">
+                      Max 3 sets. The 3rd set can be a full set or super tiebreak.
+                    </p>
+                  </div>
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => addSet(activeMatch)}
-                      className="rounded-full border border-green-400 px-4 py-2 text-sm text-green-400"
+                      disabled={activeMatch.sets.length >= 3}
+                      className="rounded-full border border-green-400 px-4 py-2 text-sm text-green-400 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       + Add set
                     </button>
+
                     <button
                       onClick={() => removeSet(activeMatch)}
-                      className="rounded-full border border-white/15 px-4 py-2 text-sm text-zinc-300"
+                      disabled={activeMatch.sets.length <= 1}
+                      className="rounded-full border border-white/15 px-4 py-2 text-sm text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       Remove set
                     </button>
@@ -216,13 +325,22 @@ export default function AdminScorePage() {
 
                 <div className="space-y-3">
                   {activeMatch.sets.map((set, index) => (
-                    <div key={index} className="grid grid-cols-[80px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3">
-                      <div className="flex items-center text-zinc-400">Set {index + 1}</div>
+                    <div
+                      key={index}
+                      className="grid grid-cols-[90px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3"
+                    >
+                      <div className="flex items-center text-zinc-400">
+                        {index === 2 && activeMatch.thirdSetMode === "Super Tiebreak"
+                          ? "Super TB"
+                          : `Set ${index + 1}`}
+                      </div>
+
                       <input
                         value={set.a}
                         onChange={(e) => updateSet(activeMatch, index, "a", e.target.value)}
                         className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold"
                       />
+
                       <input
                         value={set.b}
                         onChange={(e) => updateSet(activeMatch, index, "b", e.target.value)}
@@ -231,10 +349,6 @@ export default function AdminScorePage() {
                     </div>
                   ))}
                 </div>
-
-                <p className="mt-3 text-sm text-zinc-500">
-                  Maximum 3 sets. Use the 3rd set for a full set or super tiebreak score.
-                </p>
               </div>
             </div>
           )}
@@ -244,7 +358,15 @@ export default function AdminScorePage() {
   );
 }
 
-function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Input({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <label className="grid gap-2">
       <span className="text-sm text-zinc-400">{label}</span>
@@ -257,7 +379,15 @@ function Input({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
-function GameButtons({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function GameButtons({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div className="rounded-2xl bg-black/35 p-4">
       <p className="mb-3 font-bold">{label}</p>
@@ -267,7 +397,9 @@ function GameButtons({ label, value, onChange }: { label: string; value: string;
             key={option}
             onClick={() => onChange(option)}
             className={`rounded-xl py-3 font-black ${
-              value === option ? "bg-green-400 text-black" : "bg-white/10 text-white"
+              value === option
+                ? "bg-green-400 text-black"
+                : "bg-white/10 text-white"
             }`}
           >
             {option}
@@ -275,5 +407,19 @@ function GameButtons({ label, value, onChange }: { label: string; value: string;
         ))}
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: MatchStatus }) {
+  const styles = {
+    Pending: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
+    "In Progress": "border-green-400/40 bg-green-400/10 text-green-300",
+    Finished: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
+  };
+
+  return (
+    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}>
+      {status}
+    </span>
   );
 }
