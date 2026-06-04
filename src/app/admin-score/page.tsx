@@ -4,40 +4,42 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
-type MatchStatus = "Pending" | "In Progress" | "Finished";
-type ThirdSetMode = "Full 3rd Set" | "Super Tiebreak";
+const ACCENT = "#3FCD31";
 
-type Match = {
+type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
+type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
+
+type Partido = {
   id: string;
   club: string;
-  court: string;
+  cancha: string;
   tournament: string;
   round: string;
   match_time: string;
   team_a: string;
   team_b: string;
-  status: MatchStatus;
-  third_set_mode: ThirdSetMode;
+  status: EstadoPartido;
+  third_set_mode: ModoTercerSet;
   sets: { a: string; b: string }[];
   game_a: string;
   game_b: string;
   serving: "A" | "B";
 };
 
-const COURTS = ["Court 1", "Court 2", "Court 3", "Court 4"];
-const gameOptions = ["0", "15", "30", "40", "AD", "GAME"];
+const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
+const puntos = ["0", "15", "30", "40", "AD", "GAME"];
 
-function emptyForm(court = "Court 1") {
+function formularioVacio(cancha = "Cancha 1") {
   return {
     club: "Garana Padel",
-    court,
+    cancha,
     tournament: "",
     round: "",
     match_time: "",
     team_a: "",
     team_b: "",
-    status: "Pending" as MatchStatus,
-    third_set_mode: "Full 3rd Set" as ThirdSetMode,
+    status: "Pendiente" as EstadoPartido,
+    third_set_mode: "Tercer set completo" as ModoTercerSet,
     sets: [
       { a: "0", b: "0" },
       { a: "0", b: "0" },
@@ -49,62 +51,59 @@ function emptyForm(court = "Court 1") {
 }
 
 export default function AdminScorePage() {
-  const [selectedCourt, setSelectedCourt] = useState("Court 1");
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [form, setForm] = useState(emptyForm("Court 1"));
-  const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
-  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
-  const [formError, setFormError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [canchaSeleccionada, setCanchaSeleccionada] = useState("Cancha 1");
+  const [partidos, setPartidos] = useState<Partido[]>([]);
+  const [form, setForm] = useState(formularioVacio("Cancha 1"));
+  const [partidoActivoId, setPartidoActivoId] = useState<string | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [errorFormulario, setErrorFormulario] = useState("");
+  const [cargando, setCargando] = useState(true);
 
-  const courtMatches = useMemo(
-    () => matches.filter((match) => match.court === selectedCourt),
-    [matches, selectedCourt]
+  const partidosCancha = useMemo(
+    () => partidos.filter((partido) => partido.cancha === canchaSeleccionada),
+    [partidos, canchaSeleccionada]
   );
 
-  const activeMatch = matches.find((match) => match.id === activeMatchId);
+  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
 
   useEffect(() => {
-    fetchMatches();
+    cargarPartidos();
   }, []);
 
-  async function fetchMatches() {
-    setLoading(true);
+  async function cargarPartidos() {
+    setCargando(true);
 
     const { data, error } = await supabase
       .from("live_matches")
       .select("*")
       .eq("club", "Garana Padel")
       .eq("match_date", new Date().toISOString().slice(0, 10))
-      .order("created_at", { ascending: true });
+      .order("match_time", { ascending: true });
 
-    if (error) {
-      console.error(error);
-      setFormError("Could not load matches.");
-    } else {
-      setMatches((data || []) as Match[]);
+    if (!error) {
+      setPartidos((data || []) as Partido[]);
     }
 
-    setLoading(false);
+    setCargando(false);
   }
 
-  function selectCourt(court: string) {
-    setSelectedCourt(court);
-    setForm(emptyForm(court));
-    setEditingMatchId(null);
-    setFormError("");
+  function seleccionarCancha(cancha: string) {
+    setCanchaSeleccionada(cancha);
+    setForm(formularioVacio(cancha));
+    setEditandoId(null);
+    setErrorFormulario("");
 
-    const firstMatch = matches.find((match) => match.court === court);
-    setActiveMatchId(firstMatch?.id ?? null);
+    const primerPartido = partidos.find((partido) => partido.cancha === cancha);
+    setPartidoActivoId(primerPartido?.id ?? null);
   }
 
-  function updateForm(field: string, value: any) {
-    setFormError("");
-    setForm((current) => ({ ...current, [field]: value }));
+  function actualizarForm(campo: string, valor: any) {
+    setErrorFormulario("");
+    setForm((actual) => ({ ...actual, [campo]: valor }));
   }
 
-  function validateForm() {
-    const required = [
+  function validarFormulario() {
+    const requeridos = [
       form.tournament,
       form.round,
       form.match_time,
@@ -112,23 +111,25 @@ export default function AdminScorePage() {
       form.team_b,
     ];
 
-    if (required.some((field) => !field.trim())) {
-      setFormError("Complete tournament, round, time, Team A, and Team B.");
+    if (requeridos.some((campo) => !campo.trim())) {
+      setErrorFormulario(
+        "Completa torneo, ronda, hora, Equipo A y Equipo B antes de guardar."
+      );
       return false;
     }
 
     return true;
   }
 
-  async function saveMatch() {
-    if (!validateForm()) return;
+  async function guardarPartido() {
+    if (!validarFormulario()) return;
 
-    if (editingMatchId) {
+    if (editandoId) {
       const { error } = await supabase
         .from("live_matches")
         .update({
           club: "Garana Padel",
-          court: selectedCourt,
+          cancha: canchaSeleccionada,
           tournament: form.tournament,
           round: form.round,
           match_time: form.match_time,
@@ -136,18 +137,17 @@ export default function AdminScorePage() {
           team_b: form.team_b,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", editingMatchId);
+        .eq("id", editandoId);
 
       if (error) {
-        console.error(error);
-        setFormError("Could not update match.");
+        setErrorFormulario("No se pudo actualizar el partido.");
         return;
       }
 
-      setEditingMatchId(null);
-      setForm(emptyForm(selectedCourt));
-      await fetchMatches();
-      setActiveMatchId(editingMatchId);
+      setEditandoId(null);
+      setForm(formularioVacio(canchaSeleccionada));
+      await cargarPartidos();
+      setPartidoActivoId(editandoId);
       return;
     }
 
@@ -155,7 +155,7 @@ export default function AdminScorePage() {
       .from("live_matches")
       .insert({
         club: "Garana Padel",
-        court: selectedCourt,
+        cancha: canchaSeleccionada,
         tournament: form.tournament,
         round: form.round,
         match_time: form.match_time,
@@ -172,103 +172,107 @@ export default function AdminScorePage() {
       .single();
 
     if (error) {
-      console.error(error);
-      setFormError("Could not save match.");
+      setErrorFormulario("No se pudo guardar el partido.");
       return;
     }
 
-    setForm(emptyForm(selectedCourt));
-    await fetchMatches();
-    setActiveMatchId(data.id);
+    setForm(formularioVacio(canchaSeleccionada));
+    await cargarPartidos();
+    setPartidoActivoId(data.id);
   }
 
-  function startEditMatch(match: Match) {
+  function editarPartido(partido: Partido) {
     setForm({
-      club: match.club,
-      court: match.court,
-      tournament: match.tournament,
-      round: match.round,
-      match_time: match.match_time,
-      team_a: match.team_a,
-      team_b: match.team_b,
-      status: match.status,
-      third_set_mode: match.third_set_mode,
-      sets: match.sets,
-      game_a: match.game_a,
-      game_b: match.game_b,
-      serving: match.serving,
+      club: partido.club,
+      cancha: partido.cancha,
+      tournament: partido.tournament,
+      round: partido.round,
+      match_time: partido.match_time,
+      team_a: partido.team_a,
+      team_b: partido.team_b,
+      status: partido.status,
+      third_set_mode: partido.third_set_mode,
+      sets: partido.sets,
+      game_a: partido.game_a,
+      game_b: partido.game_b,
+      serving: partido.serving,
     });
 
-    setEditingMatchId(match.id);
-    setSelectedCourt(match.court);
-    setActiveMatchId(match.id);
-    setFormError("");
+    setEditandoId(partido.id);
+    setCanchaSeleccionada(partido.cancha);
+    setPartidoActivoId(partido.id);
+    setErrorFormulario("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function cancelEdit() {
-    setEditingMatchId(null);
-    setForm(emptyForm(selectedCourt));
-    setFormError("");
+  function cancelarEdicion() {
+    setEditandoId(null);
+    setForm(formularioVacio(canchaSeleccionada));
+    setErrorFormulario("");
   }
 
-  async function updateMatch(id: string, updates: Partial<Match>) {
+  async function actualizarPartido(id: string, cambios: Partial<Partido>) {
     const { error } = await supabase
       .from("live_matches")
       .update({
-        ...updates,
+        ...cambios,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
 
     if (error) {
-      console.error(error);
-      setFormError("Could not update score.");
+      setErrorFormulario("No se pudo actualizar el score.");
       return;
     }
 
-    setMatches((current) =>
-      current.map((match) =>
-        match.id === id ? { ...match, ...updates } : match
+    setPartidos((actual) =>
+      actual.map((partido) =>
+        partido.id === id ? { ...partido, ...cambios } : partido
       )
     );
   }
 
-  async function deleteMatch(id: string) {
-    if (!window.confirm("Delete this match?")) return;
+  async function eliminarPartido(id: string) {
+    if (!window.confirm("¿Eliminar este partido?")) return;
 
     const { error } = await supabase.from("live_matches").delete().eq("id", id);
 
     if (error) {
-      console.error(error);
-      setFormError("Could not delete match.");
+      setErrorFormulario("No se pudo eliminar el partido.");
       return;
     }
 
-    setMatches((current) => current.filter((match) => match.id !== id));
+    setPartidos((actual) => actual.filter((partido) => partido.id !== id));
 
-    if (activeMatchId === id) setActiveMatchId(null);
-    if (editingMatchId === id) cancelEdit();
+    if (partidoActivoId === id) setPartidoActivoId(null);
+    if (editandoId === id) cancelarEdicion();
   }
 
-  function addSet(match: Match) {
-    if (match.sets.length >= 3) return;
-    updateMatch(match.id, {
-      sets: [...match.sets, { a: "0", b: "0" }],
+  function agregarSet(partido: Partido) {
+    if (partido.sets.length >= 3) return;
+
+    actualizarPartido(partido.id, {
+      sets: [...partido.sets, { a: "0", b: "0" }],
     });
   }
 
-  function removeSet(match: Match) {
-    if (match.sets.length <= 1) return;
-    updateMatch(match.id, {
-      sets: match.sets.slice(0, -1),
+  function quitarSet(partido: Partido) {
+    if (partido.sets.length <= 1) return;
+
+    actualizarPartido(partido.id, {
+      sets: partido.sets.slice(0, -1),
     });
   }
 
-  function updateSet(match: Match, index: number, side: "a" | "b", value: string) {
-    const newSets = [...match.sets];
-    newSets[index] = { ...newSets[index], [side]: value };
-    updateMatch(match.id, { sets: newSets });
+  function actualizarSet(
+    partido: Partido,
+    index: number,
+    lado: "a" | "b",
+    valor: string
+  ) {
+    const nuevosSets = [...partido.sets];
+    nuevosSets[index] = { ...nuevosSets[index], [lado]: valor };
+    actualizarPartido(partido.id, { sets: nuevosSets });
   }
 
   return (
@@ -276,41 +280,52 @@ export default function AdminScorePage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 px-5 py-4 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-green-400">
+            <p
+              className="text-xs uppercase tracking-[0.35em] font-bold"
+              style={{ color: ACCENT }}
+            >
               Garana Padel
             </p>
-            <h1 className="text-2xl font-black">Recap Score Control</h1>
+            <h1 className="text-2xl font-black">Control de Score</h1>
           </div>
 
           <Link
             href="/live-score"
-            className="rounded-full bg-green-400 px-5 py-3 text-sm font-bold text-black"
+            className="rounded-full px-5 py-3 text-sm font-bold text-black"
+            style={{ backgroundColor: ACCENT }}
           >
-            View Live Score
+            Ver Score en Vivo
           </Link>
         </div>
       </header>
 
       <section className="mx-auto max-w-7xl px-5 py-6">
         <div className="mb-6 rounded-[2rem] border border-white/10 bg-white/[0.07] p-4">
-          <p className="mb-3 text-sm font-bold text-zinc-300">Select court</p>
+          <p className="mb-3 text-sm font-bold text-zinc-300">
+            Selecciona la cancha
+          </p>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {COURTS.map((court) => {
-              const count = matches.filter((match) => match.court === court).length;
+            {CANCHAS.map((cancha) => {
+              const total = partidos.filter((p) => p.cancha === cancha).length;
 
               return (
                 <button
-                  key={court}
-                  onClick={() => selectCourt(court)}
+                  key={cancha}
+                  onClick={() => seleccionarCancha(cancha)}
                   className={`rounded-2xl border px-4 py-4 text-left transition ${
-                    selectedCourt === court
-                      ? "border-green-400 bg-green-400 text-black"
-                      : "border-white/10 bg-black/30 text-white hover:border-green-400"
+                    canchaSeleccionada === cancha
+                      ? "text-black"
+                      : "border-white/10 bg-black/30 text-white hover:border-white/40"
                   }`}
+                  style={
+                    canchaSeleccionada === cancha
+                      ? { backgroundColor: ACCENT, borderColor: ACCENT }
+                      : undefined
+                  }
                 >
-                  <p className="font-black">{court}</p>
-                  <p className="text-sm opacity-70">{count} matches today</p>
+                  <p className="font-black">{cancha}</p>
+                  <p className="text-sm opacity-70">{total} partidos hoy</p>
                 </button>
               );
             })}
@@ -320,40 +335,44 @@ export default function AdminScorePage() {
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <aside className="h-fit rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl backdrop-blur-xl">
             <div className="mb-5">
-              <p className="text-sm uppercase tracking-[0.25em] text-green-400">
-                {selectedCourt}
+              <p
+                className="text-sm uppercase tracking-[0.25em] font-bold"
+                style={{ color: ACCENT }}
+              >
+                {canchaSeleccionada}
               </p>
               <h2 className="text-xl font-black">
-                {editingMatchId ? "Edit match" : "Create match"}
+                {editandoId ? "Editar partido" : "Crear partido"}
               </h2>
             </div>
 
             <div className="grid gap-4">
-              <Input label="Tournament / Event" value={form.tournament} onChange={(v) => updateForm("tournament", v)} />
-              <Input label="Round" value={form.round} onChange={(v) => updateForm("round", v)} />
-              <Input label="Time" value={form.match_time} onChange={(v) => updateForm("match_time", v)} />
-              <Input label="Team A" value={form.team_a} onChange={(v) => updateForm("team_a", v)} />
-              <Input label="Team B" value={form.team_b} onChange={(v) => updateForm("team_b", v)} />
+              <Input label="Torneo / Evento" value={form.tournament} onChange={(v) => actualizarForm("tournament", v)} />
+              <Input label="Ronda" value={form.round} onChange={(v) => actualizarForm("round", v)} />
+              <Input label="Hora" value={form.match_time} onChange={(v) => actualizarForm("match_time", v)} />
+              <Input label="Equipo A" value={form.team_a} onChange={(v) => actualizarForm("team_a", v)} />
+              <Input label="Equipo B" value={form.team_b} onChange={(v) => actualizarForm("team_b", v)} />
 
-              {formError && (
+              {errorFormulario && (
                 <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
-                  {formError}
+                  {errorFormulario}
                 </div>
               )}
 
               <button
-                onClick={saveMatch}
-                className="rounded-2xl bg-green-400 px-6 py-4 font-black text-black"
+                onClick={guardarPartido}
+                className="rounded-2xl px-6 py-4 font-black text-black"
+                style={{ backgroundColor: ACCENT }}
               >
-                {editingMatchId ? "Update match" : "Save match"}
+                {editandoId ? "Actualizar partido" : "Guardar partido"}
               </button>
 
-              {editingMatchId && (
+              {editandoId && (
                 <button
-                  onClick={cancelEdit}
+                  onClick={cancelarEdicion}
                   className="rounded-2xl border border-white/15 px-6 py-4 font-bold text-zinc-300"
                 >
-                  Cancel edit
+                  Cancelar edición
                 </button>
               )}
             </div>
@@ -362,158 +381,197 @@ export default function AdminScorePage() {
           <section>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-black">{selectedCourt}</h2>
+                <h2 className="text-2xl font-black">{canchaSeleccionada}</h2>
                 <p className="text-sm text-zinc-400">
-                  {loading ? "Loading matches..." : "Live Scores"}
+                  {cargando ? "Cargando partidos..." : "Partidos de hoy"}
                 </p>
               </div>
 
               <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
-                {courtMatches.length} matches
+                {partidosCancha.length} partidos
               </span>
             </div>
 
-            {courtMatches.length === 0 && !loading && (
+            {partidosCancha.length === 0 && !cargando && (
               <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-                No matches created for {selectedCourt} today.
+                No hay partidos creados para {canchaSeleccionada} hoy.
               </div>
             )}
 
             <div className="grid gap-5">
-              {courtMatches.map((match) => (
+              {partidosCancha.map((partido) => (
                 <div
-                  key={match.id}
+                  key={partido.id}
                   className={`rounded-[2rem] border p-4 transition ${
-                    activeMatchId === match.id
-                      ? "border-green-400 bg-green-400/10"
+                    partidoActivoId === partido.id
+                      ? "bg-white/[0.08]"
                       : "border-white/10 bg-white/[0.06]"
                   }`}
+                  style={
+                    partidoActivoId === partido.id
+                      ? { borderColor: ACCENT }
+                      : undefined
+                  }
                 >
                   <button
-                    onClick={() => setActiveMatchId(match.id)}
+                    onClick={() => setPartidoActivoId(partido.id)}
                     className="w-full text-left"
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm text-green-400">
-                          {match.tournament} · {match.match_time}
+                        <p style={{ color: ACCENT }} className="text-sm">
+                          {partido.tournament} · {partido.match_time}
                         </p>
                         <h3 className="text-xl font-black">
-                          {match.team_a} vs {match.team_b}
+                          {partido.team_a} vs {partido.team_b}
                         </h3>
-                        <p className="text-sm text-zinc-400">{match.round}</p>
+                        <p className="text-sm text-zinc-400">{partido.round}</p>
                       </div>
 
-                      <StatusBadge status={match.status} />
+                      <EstadoBadge status={partido.status} />
                     </div>
 
-                    <LiveScorePreview match={match} compact />
+                    <ScorePreview partido={partido} compact />
                   </button>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     <button
-                      onClick={() => startEditMatch(match)}
-                      className="rounded-full border border-green-400/50 px-4 py-2 text-sm font-bold text-green-300 hover:bg-green-500/10"
+                      onClick={() => editarPartido(partido)}
+                      className="rounded-full border px-4 py-2 text-sm font-bold hover:bg-white/10"
+                      style={{ borderColor: `${ACCENT}80`, color: ACCENT }}
                     >
-                      Edit match
+                      Editar partido
                     </button>
 
                     <button
-                      onClick={() => deleteMatch(match.id)}
+                      onClick={() => eliminarPartido(partido.id)}
                       className="rounded-full border border-red-400/40 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10"
                     >
-                      Delete match
+                      Eliminar partido
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {activeMatch && (
+            {partidoActivo && (
               <div className="mt-8">
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl">
                   <div className="mb-6">
-                    <p className="text-sm uppercase tracking-[0.3em] text-green-400">
-                      Editing score
+                    <p
+                      className="text-sm uppercase tracking-[0.3em] font-bold"
+                      style={{ color: ACCENT }}
+                    >
+                      Editando score
                     </p>
                     <h2 className="text-2xl font-black">
-                      {activeMatch.team_a} vs {activeMatch.team_b}
+                      {partidoActivo.team_a} vs {partidoActivo.team_b}
                     </h2>
-                    <p className="text-zinc-400">{activeMatch.court}</p>
+                    <p className="text-zinc-400">{partidoActivo.cancha}</p>
                   </div>
 
-                  <ControlSection title="Match status">
+                  <ControlSection title="Estado del partido">
                     <div className="grid gap-3 md:grid-cols-3">
-                      {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => updateMatch(activeMatch.id, { status })}
-                          className={`rounded-2xl px-5 py-4 font-bold ${
-                            activeMatch.status === status
-                              ? "bg-green-400 text-black"
-                              : "bg-white/10 text-white"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
+                      {(["Pendiente", "En juego", "Terminado"] as EstadoPartido[]).map(
+                        (status) => (
+                          <button
+                            key={status}
+                            onClick={() => actualizarPartido(partidoActivo.id, { status })}
+                            className={`rounded-2xl px-5 py-4 font-bold ${
+                              partidoActivo.status === status
+                                ? "text-black"
+                                : "bg-white/10 text-white"
+                            }`}
+                            style={
+                              partidoActivo.status === status
+                                ? { backgroundColor: ACCENT }
+                                : undefined
+                            }
+                          >
+                            {status}
+                          </button>
+                        )
+                      )}
                     </div>
                   </ControlSection>
 
-                  <ControlSection title="3rd set format">
+                  <ControlSection title="Formato del tercer set">
                     <div className="grid gap-3 md:grid-cols-2">
-                      {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => updateMatch(activeMatch.id, { third_set_mode: mode })}
-                          className={`rounded-2xl px-5 py-4 font-bold ${
-                            activeMatch.third_set_mode === mode
-                              ? "bg-green-400 text-black"
-                              : "bg-white/10 text-white"
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      ))}
+                      {(["Tercer set completo", "Super tiebreak"] as ModoTercerSet[]).map(
+                        (mode) => (
+                          <button
+                            key={mode}
+                            onClick={() =>
+                              actualizarPartido(partidoActivo.id, { third_set_mode: mode })
+                            }
+                            className={`rounded-2xl px-5 py-4 font-bold ${
+                              partidoActivo.third_set_mode === mode
+                                ? "text-black"
+                                : "bg-white/10 text-white"
+                            }`}
+                            style={
+                              partidoActivo.third_set_mode === mode
+                                ? { backgroundColor: ACCENT }
+                                : undefined
+                            }
+                          >
+                            {mode}
+                          </button>
+                        )
+                      )}
                     </div>
                   </ControlSection>
 
-                  <ControlSection title="Game score">
+                  <ControlSection title="Score del game">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <GameButtons
-                        label={activeMatch.team_a}
-                        value={activeMatch.game_a}
-                        onChange={(value) => updateMatch(activeMatch.id, { game_a: value })}
+                      <BotonesPuntos
+                        label={partidoActivo.team_a}
+                        value={partidoActivo.game_a}
+                        onChange={(value) =>
+                          actualizarPartido(partidoActivo.id, { game_a: value })
+                        }
                       />
-                      <GameButtons
-                        label={activeMatch.team_b}
-                        value={activeMatch.game_b}
-                        onChange={(value) => updateMatch(activeMatch.id, { game_b: value })}
+                      <BotonesPuntos
+                        label={partidoActivo.team_b}
+                        value={partidoActivo.game_b}
+                        onChange={(value) =>
+                          actualizarPartido(partidoActivo.id, { game_b: value })
+                        }
                       />
                     </div>
                   </ControlSection>
 
-                  <ControlSection title="Serving team">
+                  <ControlSection title="Equipo que saca">
                     <div className="grid gap-3 md:grid-cols-2">
                       <button
-                        onClick={() => updateMatch(activeMatch.id, { serving: "A" })}
+                        onClick={() => actualizarPartido(partidoActivo.id, { serving: "A" })}
                         className={`rounded-2xl px-5 py-4 font-bold ${
-                          activeMatch.serving === "A"
-                            ? "bg-green-400 text-black"
+                          partidoActivo.serving === "A"
+                            ? "text-black"
                             : "bg-white/10"
                         }`}
+                        style={
+                          partidoActivo.serving === "A"
+                            ? { backgroundColor: ACCENT }
+                            : undefined
+                        }
                       >
-                        ● {activeMatch.team_a}
+                        ● {partidoActivo.team_a}
                       </button>
                       <button
-                        onClick={() => updateMatch(activeMatch.id, { serving: "B" })}
+                        onClick={() => actualizarPartido(partidoActivo.id, { serving: "B" })}
                         className={`rounded-2xl px-5 py-4 font-bold ${
-                          activeMatch.serving === "B"
-                            ? "bg-green-400 text-black"
+                          partidoActivo.serving === "B"
+                            ? "text-black"
                             : "bg-white/10"
                         }`}
+                        style={
+                          partidoActivo.serving === "B"
+                            ? { backgroundColor: ACCENT }
+                            : undefined
+                        }
                       >
-                        ● {activeMatch.team_b}
+                        ● {partidoActivo.team_b}
                       </button>
                     </div>
                   </ControlSection>
@@ -521,43 +579,49 @@ export default function AdminScorePage() {
                   <ControlSection title="Sets">
                     <div className="mb-4 flex flex-wrap gap-2">
                       <button
-                        onClick={() => addSet(activeMatch)}
-                        disabled={activeMatch.sets.length >= 3}
-                        className="rounded-full border border-green-400 px-4 py-2 text-sm text-green-400 disabled:opacity-30"
+                        onClick={() => agregarSet(partidoActivo)}
+                        disabled={partidoActivo.sets.length >= 3}
+                        className="rounded-full border px-4 py-2 text-sm disabled:opacity-30"
+                        style={{ borderColor: ACCENT, color: ACCENT }}
                       >
-                        + Add set
+                        + Agregar set
                       </button>
 
                       <button
-                        onClick={() => removeSet(activeMatch)}
-                        disabled={activeMatch.sets.length <= 1}
+                        onClick={() => quitarSet(partidoActivo)}
+                        disabled={partidoActivo.sets.length <= 1}
                         className="rounded-full border border-white/15 px-4 py-2 text-sm text-zinc-300 disabled:opacity-30"
                       >
-                        Remove set
+                        Quitar set
                       </button>
                     </div>
 
                     <div className="space-y-3">
-                      {activeMatch.sets.map((set, index) => (
+                      {partidoActivo.sets.map((set, index) => (
                         <div
                           key={index}
-                          className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[90px_1fr_1fr]"
+                          className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[110px_1fr_1fr]"
                         >
                           <div className="flex items-center text-sm text-zinc-400">
-                            {index === 2 && activeMatch.third_set_mode === "Super Tiebreak"
+                            {index === 2 &&
+                            partidoActivo.third_set_mode === "Super tiebreak"
                               ? "Super TB"
                               : `Set ${index + 1}`}
                           </div>
 
                           <input
                             value={set.a}
-                            onChange={(e) => updateSet(activeMatch, index, "a", e.target.value)}
+                            onChange={(e) =>
+                              actualizarSet(partidoActivo, index, "a", e.target.value)
+                            }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
 
                           <input
                             value={set.b}
-                            onChange={(e) => updateSet(activeMatch, index, "b", e.target.value)}
+                            onChange={(e) =>
+                              actualizarSet(partidoActivo, index, "b", e.target.value)
+                            }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
                         </div>
@@ -574,9 +638,15 @@ export default function AdminScorePage() {
   );
 }
 
-function LiveScorePreview({ match, compact = false }: { match: Match; compact?: boolean }) {
-  const showSet3 = Boolean(match.sets[2]);
-  const thirdSetLabel = match.third_set_mode === "Super Tiebreak" ? "TB" : "S3";
+function ScorePreview({
+  partido,
+  compact = false,
+}: {
+  partido: Partido;
+  compact?: boolean;
+}) {
+  const showSet3 = Boolean(partido.sets[2]);
+  const tercerSetLabel = partido.third_set_mode === "Super tiebreak" ? "TB" : "S3";
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl">
@@ -587,28 +657,28 @@ function LiveScorePreview({ match, compact = false }: { match: Match; compact?: 
             : "grid-cols-[1fr_44px_44px_56px]"
         }`}
       >
-        <div>Team</div>
+        <div>Equipo</div>
         <div className="text-center">S1</div>
         <div className="text-center">S2</div>
-        {showSet3 && <div className="text-center">{thirdSetLabel}</div>}
+        {showSet3 && <div className="text-center">{tercerSetLabel}</div>}
         <div className="text-center">Game</div>
       </div>
 
       <div className={compact ? "space-y-2 p-3" : "space-y-3 p-4"}>
-        <PublicScoreRow
-          name={match.team_a}
-          serving={match.serving === "A"}
-          sets={match.sets.map((s) => s.a)}
-          game={match.game_a}
+        <FilaScore
+          name={partido.team_a}
+          serving={partido.serving === "A"}
+          sets={partido.sets.map((s) => s.a)}
+          game={partido.game_a}
           showSet3={showSet3}
           compact={compact}
         />
 
-        <PublicScoreRow
-          name={match.team_b}
-          serving={match.serving === "B"}
-          sets={match.sets.map((s) => s.b)}
-          game={match.game_b}
+        <FilaScore
+          name={partido.team_b}
+          serving={partido.serving === "B"}
+          sets={partido.sets.map((s) => s.b)}
+          game={partido.game_b}
           showSet3={showSet3}
           compact={compact}
         />
@@ -617,7 +687,7 @@ function LiveScorePreview({ match, compact = false }: { match: Match; compact?: 
   );
 }
 
-function PublicScoreRow({
+function FilaScore({
   name,
   serving,
   sets,
@@ -642,9 +712,12 @@ function PublicScoreRow({
     >
       <div className="flex min-w-0 items-center gap-3 font-black">
         <span
-          className={`shrink-0 rounded-full ${
-            serving ? "bg-green-400" : "bg-transparent"
-          } ${compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5"}`}
+          className="shrink-0 rounded-full"
+          style={{
+            backgroundColor: serving ? ACCENT : "transparent",
+            height: compact ? 10 : 14,
+            width: compact ? 10 : 14,
+          }}
         />
         <span className="truncate">{name}</span>
       </div>
@@ -653,14 +726,23 @@ function PublicScoreRow({
       <div className="text-center font-black">{sets[1] ?? "0"}</div>
       {showSet3 && <div className="text-center font-black">{sets[2] ?? "0"}</div>}
 
-      <div className="text-center text-xl font-black text-green-400 md:text-2xl">
+      <div
+        className="text-center text-xl font-black md:text-2xl"
+        style={{ color: ACCENT }}
+      >
         {game}
       </div>
     </div>
   );
 }
 
-function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ControlSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-8">
       <p className="mb-3 font-bold">{title}</p>
@@ -690,7 +772,7 @@ function Input({
   );
 }
 
-function GameButtons({
+function BotonesPuntos({
   label,
   value,
   onChange,
@@ -703,13 +785,14 @@ function GameButtons({
     <div className="rounded-2xl bg-black/35 p-4">
       <p className="mb-3 font-bold">{label}</p>
       <div className="grid grid-cols-3 gap-2">
-        {gameOptions.map((option) => (
+        {puntos.map((option) => (
           <button
             key={option}
             onClick={() => onChange(option)}
             className={`rounded-xl py-3 font-black ${
-              value === option ? "bg-green-400 text-black" : "bg-white/10 text-white"
+              value === option ? "text-black" : "bg-white/10 text-white"
             }`}
+            style={value === option ? { backgroundColor: ACCENT } : undefined}
           >
             {option}
           </button>
@@ -719,15 +802,22 @@ function GameButtons({
   );
 }
 
-function StatusBadge({ status }: { status: MatchStatus }) {
+function EstadoBadge({ status }: { status: EstadoPartido }) {
   const styles = {
-    Pending: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
-    "In Progress": "border-green-400/40 bg-green-400/10 text-green-300",
-    Finished: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
+    Pendiente: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
+    "En juego": "text-black",
+    Terminado: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
   };
 
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}>
+    <span
+      className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}
+      style={
+        status === "En juego"
+          ? { backgroundColor: ACCENT, borderColor: ACCENT }
+          : undefined
+      }
+    >
       {status}
     </span>
   );
