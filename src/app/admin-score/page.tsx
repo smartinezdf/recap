@@ -53,6 +53,8 @@ export default function AdminScorePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [form, setForm] = useState<Match>(emptyMatch("Court 1"));
   const [activeMatchId, setActiveMatchId] = useState<number | null>(null);
+  const [editingMatchId, setEditingMatchId] = useState<number | null>(null);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("recap-garana-matches-today");
@@ -73,19 +75,89 @@ export default function AdminScorePage() {
   function selectCourt(court: string) {
     setSelectedCourt(court);
     setForm(emptyMatch(court));
+    setEditingMatchId(null);
+    setFormError("");
+
     const firstMatch = matches.find((match) => match.court === court);
     setActiveMatchId(firstMatch?.id ?? null);
   }
 
   function updateForm(field: keyof Match, value: any) {
+    setFormError("");
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function validateForm() {
+    const requiredFields = [
+      form.tournament,
+      form.round,
+      form.time,
+      form.teamA,
+      form.teamB,
+    ];
+
+    const missing = requiredFields.some((field) => !field.trim());
+
+    if (missing) {
+      setFormError(
+        "Please complete tournament, round, time, Team A, and Team B before saving."
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   function saveMatch() {
-    const newMatch = { ...form, id: Date.now(), court: selectedCourt };
+    if (!validateForm()) return;
+
+    if (editingMatchId) {
+      const updatedMatch = {
+        ...form,
+        id: editingMatchId,
+        club: "Garana Padel",
+        court: selectedCourt,
+      };
+
+      setMatches((current) =>
+        current.map((match) =>
+          match.id === editingMatchId ? updatedMatch : match
+        )
+      );
+
+      setActiveMatchId(editingMatchId);
+      setEditingMatchId(null);
+      setForm(emptyMatch(selectedCourt));
+      return;
+    }
+
+    const newMatch = {
+      ...form,
+      id: Date.now(),
+      club: "Garana Padel",
+      court: selectedCourt,
+    };
+
     setMatches((current) => [...current, newMatch]);
     setActiveMatchId(newMatch.id);
     setForm(emptyMatch(selectedCourt));
+  }
+
+  function startEditMatch(match: Match) {
+    setForm({
+      ...match,
+      sets: match.sets.map((set) => ({ ...set })),
+    });
+    setEditingMatchId(match.id);
+    setActiveMatchId(match.id);
+    setFormError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingMatchId(null);
+    setForm(emptyMatch(selectedCourt));
+    setFormError("");
   }
 
   function updateMatch(updated: Match) {
@@ -96,18 +168,33 @@ export default function AdminScorePage() {
 
   function deleteMatch(id: number) {
     if (!window.confirm("Delete this match?")) return;
+
     setMatches((current) => current.filter((match) => match.id !== id));
+
     if (activeMatchId === id) setActiveMatchId(null);
+
+    if (editingMatchId === id) {
+      setEditingMatchId(null);
+      setForm(emptyMatch(selectedCourt));
+    }
   }
 
   function addSet(match: Match) {
     if (match.sets.length >= 3) return;
-    updateMatch({ ...match, sets: [...match.sets, { a: "0", b: "0" }] });
+
+    updateMatch({
+      ...match,
+      sets: [...match.sets, { a: "0", b: "0" }],
+    });
   }
 
   function removeSet(match: Match) {
     if (match.sets.length <= 1) return;
-    updateMatch({ ...match, sets: match.sets.slice(0, -1) });
+
+    updateMatch({
+      ...match,
+      sets: match.sets.slice(0, -1),
+    });
   }
 
   function updateSet(match: Match, index: number, side: "a" | "b", value: string) {
@@ -138,9 +225,7 @@ export default function AdminScorePage() {
 
       <section className="mx-auto max-w-7xl px-5 py-6">
         <div className="mb-6 rounded-[2rem] border border-white/10 bg-white/[0.07] p-4">
-          <p className="mb-3 text-sm font-bold text-zinc-300">
-            Select court
-          </p>
+          <p className="mb-3 text-sm font-bold text-zinc-300">Select court</p>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {COURTS.map((court) => {
@@ -170,25 +255,62 @@ export default function AdminScorePage() {
               <p className="text-sm uppercase tracking-[0.25em] text-green-400">
                 {selectedCourt}
               </p>
-              <h2 className="text-xl font-black">Create match</h2>
+              <h2 className="text-xl font-black">
+                {editingMatchId ? "Edit match" : "Create match"}
+              </h2>
               <p className="text-sm text-zinc-500">
                 Garana Padel is already selected. Add match info and save.
               </p>
             </div>
 
             <div className="grid gap-4">
-              <Input label="Tournament / Event" value={form.tournament} onChange={(v) => updateForm("tournament", v)} />
-              <Input label="Round" value={form.round} onChange={(v) => updateForm("round", v)} />
-              <Input label="Time" value={form.time} onChange={(v) => updateForm("time", v)} />
-              <Input label="Team A" value={form.teamA} onChange={(v) => updateForm("teamA", v)} />
-              <Input label="Team B" value={form.teamB} onChange={(v) => updateForm("teamB", v)} />
+              <Input
+                label="Tournament / Event"
+                value={form.tournament}
+                onChange={(v) => updateForm("tournament", v)}
+              />
+              <Input
+                label="Round"
+                value={form.round}
+                onChange={(v) => updateForm("round", v)}
+              />
+              <Input
+                label="Time"
+                value={form.time}
+                onChange={(v) => updateForm("time", v)}
+              />
+              <Input
+                label="Team A"
+                value={form.teamA}
+                onChange={(v) => updateForm("teamA", v)}
+              />
+              <Input
+                label="Team B"
+                value={form.teamB}
+                onChange={(v) => updateForm("teamB", v)}
+              />
+
+              {formError && (
+                <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
+                  {formError}
+                </div>
+              )}
 
               <button
                 onClick={saveMatch}
                 className="mt-2 rounded-2xl bg-green-400 px-6 py-4 font-black text-black"
               >
-                Save match
+                {editingMatchId ? "Update match" : "Save match"}
               </button>
+
+              {editingMatchId && (
+                <button
+                  onClick={cancelEdit}
+                  className="rounded-2xl border border-white/15 px-6 py-4 font-bold text-zinc-300"
+                >
+                  Cancel edit
+                </button>
+              )}
             </div>
           </aside>
 
@@ -234,7 +356,9 @@ export default function AdminScorePage() {
                         <h3 className="text-xl font-black">
                           {match.teamA || "Team A"} vs {match.teamB || "Team B"}
                         </h3>
-                        <p className="text-sm text-zinc-400">{match.round || "Round"}</p>
+                        <p className="text-sm text-zinc-400">
+                          {match.round || "Round"}
+                        </p>
                       </div>
 
                       <StatusBadge status={match.status} />
@@ -243,29 +367,33 @@ export default function AdminScorePage() {
                     <LiveScorePreview match={match} compact />
                   </button>
 
-                  <button
-                    onClick={() => deleteMatch(match.id)}
-                    className="mt-4 rounded-full border border-red-400/40 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10"
-                  >
-                    Delete match
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => startEditMatch(match)}
+                      className="rounded-full border border-green-400/50 px-4 py-2 text-sm font-bold text-green-300 hover:bg-green-500/10"
+                    >
+                      Edit match
+                    </button>
+
+                    <button
+                      onClick={() => deleteMatch(match.id)}
+                      className="rounded-full border border-red-400/40 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10"
+                    >
+                      Delete match
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
             {activeMatch && (
               <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_420px]">
-                <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-green-400">
-                    Public preview
-                  </p>
-                  <LiveScorePreview match={activeMatch} />
-                </div>
+                <LiveScorePreview match={activeMatch} />
 
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl">
                   <div className="mb-6">
                     <p className="text-sm uppercase tracking-[0.3em] text-green-400">
-                      Editing
+                      Editing score
                     </p>
                     <h2 className="text-2xl font-black">
                       {activeMatch.teamA || "Team A"} vs {activeMatch.teamB || "Team B"}
@@ -275,37 +403,43 @@ export default function AdminScorePage() {
 
                   <ControlSection title="Match status">
                     <div className="grid gap-3">
-                      {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => updateMatch({ ...activeMatch, status })}
-                          className={`rounded-2xl px-5 py-4 font-bold ${
-                            activeMatch.status === status
-                              ? "bg-green-400 text-black"
-                              : "bg-white/10 text-white"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
+                      {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map(
+                        (status) => (
+                          <button
+                            key={status}
+                            onClick={() => updateMatch({ ...activeMatch, status })}
+                            className={`rounded-2xl px-5 py-4 font-bold ${
+                              activeMatch.status === status
+                                ? "bg-green-400 text-black"
+                                : "bg-white/10 text-white"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        )
+                      )}
                     </div>
                   </ControlSection>
 
                   <ControlSection title="3rd set format">
                     <div className="grid gap-3">
-                      {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => updateMatch({ ...activeMatch, thirdSetMode: mode })}
-                          className={`rounded-2xl px-5 py-4 font-bold ${
-                            activeMatch.thirdSetMode === mode
-                              ? "bg-green-400 text-black"
-                              : "bg-white/10 text-white"
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      ))}
+                      {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map(
+                        (mode) => (
+                          <button
+                            key={mode}
+                            onClick={() =>
+                              updateMatch({ ...activeMatch, thirdSetMode: mode })
+                            }
+                            className={`rounded-2xl px-5 py-4 font-bold ${
+                              activeMatch.thirdSetMode === mode
+                                ? "bg-green-400 text-black"
+                                : "bg-white/10 text-white"
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        )
+                      )}
                     </div>
                   </ControlSection>
 
@@ -314,12 +448,16 @@ export default function AdminScorePage() {
                       <GameButtons
                         label={activeMatch.teamA || "Team A"}
                         value={activeMatch.gameA}
-                        onChange={(value) => updateMatch({ ...activeMatch, gameA: value })}
+                        onChange={(value) =>
+                          updateMatch({ ...activeMatch, gameA: value })
+                        }
                       />
                       <GameButtons
                         label={activeMatch.teamB || "Team B"}
                         value={activeMatch.gameB}
-                        onChange={(value) => updateMatch({ ...activeMatch, gameB: value })}
+                        onChange={(value) =>
+                          updateMatch({ ...activeMatch, gameB: value })
+                        }
                       />
                     </div>
                   </ControlSection>
@@ -375,20 +513,25 @@ export default function AdminScorePage() {
                           className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[90px_1fr_1fr]"
                         >
                           <div className="flex items-center text-sm text-zinc-400">
-                            {index === 2 && activeMatch.thirdSetMode === "Super Tiebreak"
+                            {index === 2 &&
+                            activeMatch.thirdSetMode === "Super Tiebreak"
                               ? "Super TB"
                               : `Set ${index + 1}`}
                           </div>
 
                           <input
                             value={set.a}
-                            onChange={(e) => updateSet(activeMatch, index, "a", e.target.value)}
+                            onChange={(e) =>
+                              updateSet(activeMatch, index, "a", e.target.value)
+                            }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
 
                           <input
                             value={set.b}
-                            onChange={(e) => updateSet(activeMatch, index, "b", e.target.value)}
+                            onChange={(e) =>
+                              updateSet(activeMatch, index, "b", e.target.value)
+                            }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
                         </div>
@@ -573,9 +716,7 @@ function GameButtons({
             key={option}
             onClick={() => onChange(option)}
             className={`rounded-xl py-3 font-black ${
-              value === option
-                ? "bg-green-400 text-black"
-                : "bg-white/10 text-white"
+              value === option ? "bg-green-400 text-black" : "bg-white/10 text-white"
             }`}
           >
             {option}
