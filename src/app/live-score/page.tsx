@@ -130,12 +130,9 @@ export default function LiveScorePage() {
 
       <section className="mx-auto max-w-7xl px-5 py-8">
         <div className="mb-8">
-          <p
-            className="mb-3 text-sm font-bold uppercase tracking-[0.3em]"
-            style={{ color: ACCENT }}
-          >
-
-          <h2 className="text-4xl font-black md:text-6xl">
+          <h2 className="text-3xl font-black md:text-4xl">
+              style={{ color: ACCENT }}
+         >   
             Partidos de hoy
           </h2>
 
