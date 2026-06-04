@@ -202,7 +202,7 @@ export default function LiveScorePage() {
 
         {courtMatches.length === 0 && !loading && (
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-            No hay partidos disponibles para {selectedCourt} en este momento.
+            No hay scores disponibles para {selectedCourt} en este momento.
           </div>
         )}
 
