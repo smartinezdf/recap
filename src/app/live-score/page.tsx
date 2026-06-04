@@ -129,15 +129,16 @@ export default function LiveScorePage() {
       </header>
 
       <section className="mx-auto max-w-7xl px-5 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-black md:text-4xl">
-              style={{ color: ACCENT }}
+        <div className="mb-6">
+          <h2 
+            className="text-3xl font-black md:text-4xl">
+            style={{ color: ACCENT }}
          >   
             Partidos de hoy
           </h2>
 
-          <p className="mt-4 max-w-2xl text-zinc-400">
-            Selecciona la cancha y sigue el score en vivo de los partidos.
+          <p className="mt-2 text-zinc-400">
+            Selecciona la cancha y sigue el score en vivo de los partidos
           </p>
         </div>
 
