@@ -6,48 +6,48 @@ import { supabase } from "@/lib/supabaseClient";
 
 const ACCENT = "#3FCD31";
 
-type MatchStatus = "Pending" | "In Progress" | "Finished";
-type ThirdSetMode = "Full 3rd Set" | "Super Tiebreak";
+type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
+type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
 
-type Match = {
+type Partido = {
   id: string;
   club: string;
-  court: string;
+  cancha: string;
   tournament: string;
   round: string;
   match_time: string;
   team_a: string;
   team_b: string;
-  status: MatchStatus;
-  third_set_mode: ThirdSetMode;
+  status: EstadoPartido;
+  third_set_mode: ModoTercerSet;
   sets: { a: string; b: string }[];
   game_a: string;
   game_b: string;
   serving: "A" | "B";
 };
 
-const COURTS = ["Court 1", "Court 2", "Court 3", "Court 4"];
+const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
 
 export default function LiveScorePage() {
-  const [selectedCourt, setSelectedCourt] = useState("Court 1");
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [canchaSeleccionada, setCanchaSeleccionada] = useState("Cancha 1");
+  const [partidos, setPartidos] = useState<Partido[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [cargando, setCargando] = useState(true);
 
-  const courtMatches = useMemo(
-    () => matches.filter((match) => match.court === selectedCourt),
-    [matches, selectedCourt]
+  const partidosCancha = useMemo(
+    () => partidos.filter((partido) => partido.cancha === canchaSeleccionada),
+    [partidos, canchaSeleccionada]
   );
 
   useEffect(() => {
-    fetchMatches();
+    cargarPartidos();
 
     const channel = supabase
       .channel("live_matches_changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "live_matches" },
-        () => fetchMatches()
+        () => cargarPartidos()
       )
       .subscribe();
 
@@ -56,8 +56,8 @@ export default function LiveScorePage() {
     };
   }, []);
 
-  async function fetchMatches() {
-    setLoading(true);
+  async function cargarPartidos() {
+    setCargando(true);
 
     const { data, error } = await supabase
       .from("live_matches")
@@ -67,10 +67,10 @@ export default function LiveScorePage() {
       .order("match_time", { ascending: true });
 
     if (!error) {
-      setMatches((data || []) as Match[]);
+      setPartidos((data || []) as Partido[]);
     }
 
-    setLoading(false);
+    setCargando(false);
   }
 
   return (
@@ -107,7 +107,10 @@ export default function LiveScorePage() {
         {menuOpen && (
           <div className="mt-4 border-t border-zinc-200 pt-4">
             <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3">
-              <Link className="rounded-2xl bg-zinc-100 p-4 font-bold text-black" href="/">
+              <Link
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+                href="/"
+              >
                 Clips
               </Link>
 
@@ -130,15 +133,15 @@ export default function LiveScorePage() {
 
       <section className="mx-auto max-w-7xl px-5 py-8">
         <div className="mb-6">
-          <h2 
-            className="text-3xl font-black md:text-4xl">
+          <h2
+            className="text-3xl font-black md:text-4xl"
             style={{ color: ACCENT }}
-         >   
-            Partidos de hoy
+          >
+            Partidos de Hoy
           </h2>
 
           <p className="mt-2 text-zinc-400">
-            Selecciona la cancha y sigue el score en vivo de los partidos
+            Selecciona la cancha y sigue el score en vivo de los partidos.
           </p>
         </div>
 
@@ -146,37 +149,43 @@ export default function LiveScorePage() {
           <p className="mb-3 text-sm font-bold text-zinc-300">Canchas</p>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {COURTS.map((court) => {
-              const count = matches.filter((match) => match.court === court).length;
-              const liveCount = matches.filter(
-                (match) => match.court === court && match.status === "In Progress"
+            {CANCHAS.map((cancha) => {
+              const total = partidos.filter(
+                (partido) => partido.cancha === cancha
+              ).length;
+
+              const enVivo = partidos.filter(
+                (partido) =>
+                  partido.cancha === cancha && partido.status === "En juego"
               ).length;
 
               return (
                 <button
-                  key={court}
-                  onClick={() => setSelectedCourt(court)}
+                  key={cancha}
+                  onClick={() => setCanchaSeleccionada(cancha)}
                   className={`rounded-2xl border px-4 py-4 text-left transition ${
-                    selectedCourt === court
+                    canchaSeleccionada === cancha
                       ? "text-black"
                       : "border-white/10 bg-black/30 text-white hover:border-white/40"
                   }`}
                   style={
-                    selectedCourt === court
+                    canchaSeleccionada === cancha
                       ? { backgroundColor: ACCENT, borderColor: ACCENT }
                       : undefined
                   }
                 >
                   <div className="flex items-center justify-between">
-                    <p className="font-black">{court}</p>
-                    {liveCount > 0 && (
+                    <p className="font-black">{cancha}</p>
+
+                    {enVivo > 0 && (
                       <span
                         className="h-2.5 w-2.5 rounded-full"
                         style={{ backgroundColor: ACCENT }}
                       />
                     )}
                   </div>
-                  <p className="text-sm opacity-70">{count} partidos hoy</p>
+
+                  <p className="text-sm opacity-70">{total} partidos hoy</p>
                 </button>
               );
             })}
@@ -185,27 +194,28 @@ export default function LiveScorePage() {
 
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-2xl font-black">{selectedCourt}</h3>
+            <h3 className="text-2xl font-black">{canchaSeleccionada}</h3>
             <p className="text-sm text-zinc-400">
-              {loading ? "Cargando..." : "Live Score"}
+              {cargando ? "Cargando..." : "Live Score"}
             </p>
           </div>
 
           <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
-            {courtMatches.length} partidos
+            {partidosCancha.length} partidos
           </span>
         </div>
 
-        {courtMatches.length === 0 && !loading && (
+        {partidosCancha.length === 0 && !cargando && (
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-            No hay score disponible para {selectedCourt} en este momento.
+            No hay partidos disponibles para {canchaSeleccionada} en este
+            momento.
           </div>
         )}
 
         <div className="grid gap-5">
-          {courtMatches.map((match) => (
+          {partidosCancha.map((partido) => (
             <article
-              key={match.id}
+              key={partido.id}
               className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.06] shadow-2xl"
             >
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
@@ -215,9 +225,9 @@ export default function LiveScorePage() {
                       className="h-2.5 w-2.5 rounded-full"
                       style={{
                         backgroundColor:
-                          match.status === "In Progress"
+                          partido.status === "En juego"
                             ? ACCENT
-                            : match.status === "Pending"
+                            : partido.status === "Pendiente"
                             ? "#FACC15"
                             : "#A1A1AA",
                       }}
@@ -227,16 +237,16 @@ export default function LiveScorePage() {
                       className="text-xs font-bold uppercase tracking-[0.25em]"
                       style={{ color: ACCENT }}
                     >
-                      {statusLabel(match.status)}
+                      {partido.status}
                     </span>
                   </div>
 
                   <h4 className="text-2xl font-black md:text-3xl">
-                    {match.tournament}
+                    {partido.tournament}
                   </h4>
 
                   <p className="text-zinc-400">
-                    {match.round} · {match.match_time}
+                    {partido.round} · {partido.match_time}
                   </p>
                 </div>
 
@@ -248,11 +258,11 @@ export default function LiveScorePage() {
                     color: ACCENT,
                   }}
                 >
-                  {match.court}
+                  {partido.cancha}
                 </span>
               </div>
 
-              <LiveScoreCard match={match} />
+              <LiveScoreCard partido={partido} />
 
               <div className="flex flex-wrap gap-3 border-t border-white/10 p-5">
                 <button className="rounded-full border border-white/10 px-5 py-3 text-zinc-300">
@@ -267,15 +277,10 @@ export default function LiveScorePage() {
   );
 }
 
-function statusLabel(status: MatchStatus) {
-  if (status === "Pending") return "Pendiente";
-  if (status === "In Progress") return "En juego";
-  return "Terminado";
-}
-
-function LiveScoreCard({ match }: { match: Match }) {
-  const showSet3 = Boolean(match.sets[2]);
-  const thirdSetLabel = match.third_set_mode === "Super Tiebreak" ? "TB" : "S3";
+function LiveScoreCard({ partido }: { partido: Partido }) {
+  const showSet3 = Boolean(partido.sets[2]);
+  const tercerSetLabel =
+    partido.third_set_mode === "Super tiebreak" ? "TB" : "S3";
 
   return (
     <div>
@@ -289,24 +294,24 @@ function LiveScoreCard({ match }: { match: Match }) {
         <div>Equipo</div>
         <div className="text-center">S1</div>
         <div className="text-center">S2</div>
-        {showSet3 && <div className="text-center">{thirdSetLabel}</div>}
+        {showSet3 && <div className="text-center">{tercerSetLabel}</div>}
         <div className="text-center">Game</div>
       </div>
 
       <div className="space-y-3 p-4">
         <ScoreRow
-          name={match.team_a}
-          serving={match.serving === "A"}
-          sets={match.sets.map((s) => s.a)}
-          game={match.game_a}
+          name={partido.team_a}
+          serving={partido.serving === "A"}
+          sets={partido.sets.map((s) => s.a)}
+          game={partido.game_a}
           showSet3={showSet3}
         />
 
         <ScoreRow
-          name={match.team_b}
-          serving={match.serving === "B"}
-          sets={match.sets.map((s) => s.b)}
-          game={match.game_b}
+          name={partido.team_b}
+          serving={partido.serving === "B"}
+          sets={partido.sets.map((s) => s.b)}
+          game={partido.game_b}
           showSet3={showSet3}
         />
       </div>
@@ -345,7 +350,10 @@ function ScoreRow({
 
       <div className="text-center font-black">{sets[0] ?? "0"}</div>
       <div className="text-center font-black">{sets[1] ?? "0"}</div>
-      {showSet3 && <div className="text-center font-black">{sets[2] ?? "0"}</div>}
+
+      {showSet3 && (
+        <div className="text-center font-black">{sets[2] ?? "0"}</div>
+      )}
 
       <div
         className="text-center text-xl font-black md:text-2xl"
