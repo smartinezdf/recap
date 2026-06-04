@@ -134,9 +134,7 @@ export default function LiveScorePage() {
       <section className="mx-auto max-w-7xl px-5 py-8">
         <div className="mb-6">
           <h2
-            className="text-3xl font-black md:text-4xl"
-            style={{ color: ACCENT }}
-          >
+            className="text-4xl font-black md:text-6xl">
             Partidos de Hoy
           </h2>
 
@@ -207,7 +205,7 @@ export default function LiveScorePage() {
 
         {partidosCancha.length === 0 && !cargando && (
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-            No hay partidos disponibles para {canchaSeleccionada} en este
+            No hay score disponible para {canchaSeleccionada} en este
             momento.
           </div>
         )}
