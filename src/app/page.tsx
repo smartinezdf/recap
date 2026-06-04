@@ -292,48 +292,53 @@ export default function Page() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white px-5 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="rounded-xl border border-zinc-200 px-4 py-3 text-xl text-black"
           >
             ☰
           </button>
-            
-          <a href="#top" className="block">
-            <Shell>
-              <div className="py-3 flex justify-center">
-                <img
-                  src="/RecapLogo.png"
-                  alt="Recap"
-                  className="h-14 sm:h-16 object-contain cursor-pointer"
-                />
-              </div>
-            </Shell>
+
+          {/* Logo centrado */}
+          <a
+            href="#top"
+            className="absolute left-1/2 -translate-x-1/2"
+          >
+            <img
+              src="/RecapLogo.png"
+              alt="Recap"
+              className="h-14 sm:h-16 object-contain cursor-pointer"
+            />
           </a>
+
+          {/* Espaciador para mantener el logo perfectamente centrado */}
+          <div className="w-[54px]" />
         </div>
-        
+
         {menuOpen && (
           <div className="mt-4 border-t border-zinc-200 pt-4">
             <div className="mx-auto max-w-7xl grid gap-3 md:grid-cols-2">
+
               <a
-                href="/"
-                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+                href="#buscar"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black transition hover:bg-zinc-200"
               >
                 Clips
               </a>
-              
+
               <a
                 href="/live-score"
-                className="rounded-2xl p-4 font-bold text-black"
-                style={{ backgroundColor: "#3FCD31" }}
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black transition hover:bg-zinc-200"
               >
                 Score en Vivo
               </a>
+
             </div>
           </div>
         )}
-  </header>
+      </header>
 
       {/* HERO (updated copy + cleaner) */}
       <section className="relative">
