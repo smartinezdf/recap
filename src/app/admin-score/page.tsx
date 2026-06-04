@@ -364,7 +364,7 @@ export default function AdminScorePage() {
               <div>
                 <h2 className="text-2xl font-black">{selectedCourt}</h2>
                 <p className="text-sm text-zinc-400">
-                  {loading ? "Loading matches..." : "Synced with Supabase."}
+                  {loading ? "Loading matches..." : }
                 </p>
               </div>
 
