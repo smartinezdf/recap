@@ -25,7 +25,7 @@ type Match = {
 
 const gameOptions = ["0", "15", "30", "40", "AD", "GAME"];
 
-function getEmptyForm(): Match {
+function emptyMatch(): Match {
   return {
     id: 0,
     club: "",
@@ -49,10 +49,10 @@ function getEmptyForm(): Match {
 
 export default function AdminScorePage() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [form, setForm] = useState<Match>(emptyMatch());
   const [activeMatchId, setActiveMatchId] = useState<number | null>(null);
-  const [form, setForm] = useState<Match>(getEmptyForm());
 
-  const activeMatch = matches.find((m) => m.id === activeMatchId);
+  const activeMatch = matches.find((match) => match.id === activeMatchId);
 
   function updateForm(field: keyof Match, value: any) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -62,12 +62,12 @@ export default function AdminScorePage() {
     const newMatch = { ...form, id: Date.now() };
     setMatches((current) => [...current, newMatch]);
     setActiveMatchId(newMatch.id);
-    setForm(getEmptyForm());
+    setForm(emptyMatch());
   }
 
   function updateMatch(updated: Match) {
     setMatches((current) =>
-      current.map((m) => (m.id === updated.id ? updated : m))
+      current.map((match) => (match.id === updated.id ? updated : match))
     );
   }
 
@@ -75,7 +75,7 @@ export default function AdminScorePage() {
     const confirmed = window.confirm("Delete this match?");
     if (!confirmed) return;
 
-    setMatches((current) => current.filter((m) => m.id !== id));
+    setMatches((current) => current.filter((match) => match.id !== id));
 
     if (activeMatchId === id) {
       setActiveMatchId(null);
@@ -84,12 +84,20 @@ export default function AdminScorePage() {
 
   function addSet(match: Match) {
     if (match.sets.length >= 3) return;
-    updateMatch({ ...match, sets: [...match.sets, { a: "0", b: "0" }] });
+
+    updateMatch({
+      ...match,
+      sets: [...match.sets, { a: "0", b: "0" }],
+    });
   }
 
   function removeSet(match: Match) {
     if (match.sets.length <= 1) return;
-    updateMatch({ ...match, sets: match.sets.slice(0, -1) });
+
+    updateMatch({
+      ...match,
+      sets: match.sets.slice(0, -1),
+    });
   }
 
   function updateSet(match: Match, index: number, side: "a" | "b", value: string) {
@@ -101,7 +109,7 @@ export default function AdminScorePage() {
   return (
     <main className="min-h-screen bg-[#050806] text-white">
       <header className="border-b border-white/10 bg-black/80 px-6 py-5 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-green-400">
               Recap Admin
@@ -118,8 +126,8 @@ export default function AdminScorePage() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[380px_1fr]">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
+      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[360px_1fr]">
+        <aside className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
           <h2 className="mb-5 text-xl font-black">Create match</h2>
 
           <div className="grid gap-4">
@@ -142,17 +150,26 @@ export default function AdminScorePage() {
               After saving, this form clears and the match appears on the right.
             </p>
           </div>
-        </div>
+        </aside>
 
-        <div>
+        <section>
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-2xl font-black">Matches</h2>
-            <p className="text-sm text-zinc-400">{matches.length} created</p>
+            <div>
+              <h2 className="text-2xl font-black">Matches</h2>
+              <p className="text-sm text-zinc-400">
+                Select a match to control the live score.
+              </p>
+            </div>
+
+            <p className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
+              {matches.length} created
+            </p>
           </div>
 
           {matches.length === 0 && (
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-              Create a match first. After saving, you can edit status, score, serving team, games, and sets.
+              Create a match first. After saving, you can edit status, score,
+              serving team, games, and sets.
             </div>
           )}
 
@@ -166,11 +183,15 @@ export default function AdminScorePage() {
                     : "border-white/10 bg-white/[0.06]"
                 }`}
               >
-                <button onClick={() => setActiveMatchId(match.id)} className="w-full text-left">
+                <button
+                  onClick={() => setActiveMatchId(match.id)}
+                  className="w-full text-left"
+                >
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm text-green-400">
                       {match.club || "Club"} · {match.court || "Court"}
                     </p>
+
                     <StatusBadge status={match.status} />
                   </div>
 
@@ -179,10 +200,11 @@ export default function AdminScorePage() {
                   </h3>
 
                   <p className="mb-5 text-zinc-400">
-                    {match.tournament || "Tournament"} · {match.round || "Round"} · {match.time || "Time"}
+                    {match.tournament || "Tournament"} · {match.round || "Round"} ·{" "}
+                    {match.time || "Time"}
                   </p>
 
-                  <MiniScore match={match} />
+                  <LiveScorePreview match={match} compact />
                 </button>
 
                 <button
@@ -196,105 +218,110 @@ export default function AdminScorePage() {
           </div>
 
           {activeMatch && (
-            <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl">
-              <div className="mb-6">
-                <p className="text-sm uppercase tracking-[0.3em] text-green-400">Editing</p>
-                <h2 className="text-3xl font-black">
-                  {activeMatch.teamA} vs {activeMatch.teamB}
-                </h2>
-                <p className="text-zinc-400">
-                  {activeMatch.club} · {activeMatch.court}
-                </p>
-              </div>
+            <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_420px]">
+              <LiveScorePreview match={activeMatch} />
 
-              <MiniScore match={activeMatch} />
-
-              <div className="mb-8 mt-8">
-                <p className="mb-3 font-bold">Match status</p>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => updateMatch({ ...activeMatch, status })}
-                      className={`rounded-2xl px-5 py-4 font-bold ${
-                        activeMatch.status === status
-                          ? "bg-green-400 text-black"
-                          : "bg-white/10 text-white"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
+              <div className="rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl">
+                <div className="mb-6">
+                  <p className="text-sm uppercase tracking-[0.3em] text-green-400">
+                    Editing
+                  </p>
+                  <h2 className="text-2xl font-black">
+                    {activeMatch.teamA} vs {activeMatch.teamB}
+                  </h2>
+                  <p className="text-zinc-400">
+                    {activeMatch.club} · {activeMatch.court}
+                  </p>
                 </div>
-              </div>
 
-              <div className="mb-8">
-                <p className="mb-3 font-bold">3rd set format</p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => updateMatch({ ...activeMatch, thirdSetMode: mode })}
-                      className={`rounded-2xl px-5 py-4 font-bold ${
-                        activeMatch.thirdSetMode === mode
-                          ? "bg-green-400 text-black"
-                          : "bg-white/10 text-white"
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <p className="mb-3 font-bold">Game score</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <GameButtons
-                    label={activeMatch.teamA}
-                    value={activeMatch.gameA}
-                    onChange={(value) => updateMatch({ ...activeMatch, gameA: value })}
-                  />
-                  <GameButtons
-                    label={activeMatch.teamB}
-                    value={activeMatch.gameB}
-                    onChange={(value) => updateMatch({ ...activeMatch, gameB: value })}
-                  />
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <p className="mb-3 font-bold">Serving team</p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <button
-                    onClick={() => updateMatch({ ...activeMatch, serving: "A" })}
-                    className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "A" ? "bg-green-400 text-black" : "bg-white/10"
-                    }`}
-                  >
-                    ● {activeMatch.teamA}
-                  </button>
-                  <button
-                    onClick={() => updateMatch({ ...activeMatch, serving: "B" })}
-                    className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "B" ? "bg-green-400 text-black" : "bg-white/10"
-                    }`}
-                  >
-                    ● {activeMatch.teamB}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-bold">Sets</p>
-                    <p className="text-sm text-zinc-500">
-                      Max 3 sets. The 3rd set can be a full set or super tiebreak.
-                    </p>
+                <ControlSection title="Match status">
+                  <div className="grid gap-3">
+                    {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map(
+                      (status) => (
+                        <button
+                          key={status}
+                          onClick={() => updateMatch({ ...activeMatch, status })}
+                          className={`rounded-2xl px-5 py-4 font-bold ${
+                            activeMatch.status === status
+                              ? "bg-green-400 text-black"
+                              : "bg-white/10 text-white"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      )
+                    )}
                   </div>
+                </ControlSection>
 
-                  <div className="flex gap-2">
+                <ControlSection title="3rd set format">
+                  <div className="grid gap-3">
+                    {(["Full 3rd Set", "Super Tiebreak"] as ThirdSetMode[]).map(
+                      (mode) => (
+                        <button
+                          key={mode}
+                          onClick={() =>
+                            updateMatch({ ...activeMatch, thirdSetMode: mode })
+                          }
+                          className={`rounded-2xl px-5 py-4 font-bold ${
+                            activeMatch.thirdSetMode === mode
+                              ? "bg-green-400 text-black"
+                              : "bg-white/10 text-white"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </ControlSection>
+
+                <ControlSection title="Game score">
+                  <div className="grid gap-4">
+                    <GameButtons
+                      label={activeMatch.teamA || "Team A"}
+                      value={activeMatch.gameA}
+                      onChange={(value) =>
+                        updateMatch({ ...activeMatch, gameA: value })
+                      }
+                    />
+                    <GameButtons
+                      label={activeMatch.teamB || "Team B"}
+                      value={activeMatch.gameB}
+                      onChange={(value) =>
+                        updateMatch({ ...activeMatch, gameB: value })
+                      }
+                    />
+                  </div>
+                </ControlSection>
+
+                <ControlSection title="Serving team">
+                  <div className="grid gap-3">
+                    <button
+                      onClick={() => updateMatch({ ...activeMatch, serving: "A" })}
+                      className={`rounded-2xl px-5 py-4 font-bold ${
+                        activeMatch.serving === "A"
+                          ? "bg-green-400 text-black"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      ● {activeMatch.teamA || "Team A"}
+                    </button>
+                    <button
+                      onClick={() => updateMatch({ ...activeMatch, serving: "B" })}
+                      className={`rounded-2xl px-5 py-4 font-bold ${
+                        activeMatch.serving === "B"
+                          ? "bg-green-400 text-black"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      ● {activeMatch.teamB || "Team B"}
+                    </button>
+                  </div>
+                </ControlSection>
+
+                <ControlSection title="Sets">
+                  <div className="mb-4 flex gap-2">
                     <button
                       onClick={() => addSet(activeMatch)}
                       disabled={activeMatch.sets.length >= 3}
@@ -302,6 +329,7 @@ export default function AdminScorePage() {
                     >
                       + Add set
                     </button>
+
                     <button
                       onClick={() => removeSet(activeMatch)}
                       disabled={activeMatch.sets.length <= 1}
@@ -310,88 +338,257 @@ export default function AdminScorePage() {
                       Remove set
                     </button>
                   </div>
-                </div>
 
-                <div className="space-y-3">
-                  {activeMatch.sets.map((set, index) => (
-                    <div key={index} className="grid grid-cols-[90px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3">
-                      <div className="flex items-center text-zinc-400">
-                        {index === 2 && activeMatch.thirdSetMode === "Super Tiebreak"
-                          ? "Super TB"
-                          : `Set ${index + 1}`}
+                  <div className="space-y-3">
+                    {activeMatch.sets.map((set, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-[90px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3"
+                      >
+                        <div className="flex items-center text-sm text-zinc-400">
+                          {index === 2 &&
+                          activeMatch.thirdSetMode === "Super Tiebreak"
+                            ? "Super TB"
+                            : `Set ${index + 1}`}
+                        </div>
+
+                        <input
+                          value={set.a}
+                          onChange={(e) =>
+                            updateSet(activeMatch, index, "a", e.target.value)
+                          }
+                          className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
+                        />
+
+                        <input
+                          value={set.b}
+                          onChange={(e) =>
+                            updateSet(activeMatch, index, "b", e.target.value)
+                          }
+                          className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
+                        />
                       </div>
-                      <input
-                        value={set.a}
-                        onChange={(e) => updateSet(activeMatch, index, "a", e.target.value)}
-                        className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold"
-                      />
-                      <input
-                        value={set.b}
-                        onChange={(e) => updateSet(activeMatch, index, "b", e.target.value)}
-                        className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold"
-                      />
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </ControlSection>
               </div>
             </div>
           )}
-        </div>
+        </section>
       </section>
     </main>
   );
 }
 
-function MiniScore({ match }: { match: Match }) {
+function LiveScorePreview({
+  match,
+  compact = false,
+}: {
+  match: Match;
+  compact?: boolean;
+}) {
+  const showSet3 = Boolean(match.sets[2]);
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
-      <div className="mb-3 grid grid-cols-[1fr_repeat(3,42px)_64px] gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
-        <div>Team</div>
-        <div className="text-center">S1</div>
-        <div className="text-center">S2</div>
-        <div className="text-center">
-          {match.thirdSetMode === "Super Tiebreak" ? "TB" : "S3"}
+    <div
+      className={`overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl ${
+        compact ? "p-4" : ""
+      }`}
+    >
+      {!compact && (
+        <div className="flex items-start justify-between border-b border-white/10 p-6">
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-green-400">
+                {match.status}
+              </span>
+            </div>
+
+            <h3 className="text-3xl font-black">
+              {match.court || "Court"} · {match.tournament || "Tournament"}
+            </h3>
+
+            <p className="text-zinc-400">
+              {match.round || "Round"} · {match.time || "Time"}
+            </p>
+          </div>
+
+          <div className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-sm text-zinc-300">
+            Live Score
+          </div>
         </div>
-        <div className="text-center">Game</div>
+      )}
+
+      <div
+        className={`mb-4 flex flex-wrap gap-2 text-xs font-bold text-zinc-300 ${
+          compact ? "" : "border-b border-white/10 p-5"
+        }`}
+      >
+        <span className="rounded-full bg-white/10 px-3 py-1">
+          Set 1: {match.sets[0]?.a ?? "0"}-{match.sets[0]?.b ?? "0"}
+        </span>
+
+        <span className="rounded-full bg-white/10 px-3 py-1">
+          Set 2: {match.sets[1]?.a ?? "0"}-{match.sets[1]?.b ?? "0"}
+        </span>
+
+        {showSet3 && (
+          <span className="rounded-full bg-white/10 px-3 py-1">
+            {match.thirdSetMode === "Super Tiebreak" ? "Super TB" : "Set 3"}:{" "}
+            {match.sets[2]?.a ?? "0"}-{match.sets[2]?.b ?? "0"}
+          </span>
+        )}
+
+        <span className="rounded-full bg-green-400 px-3 py-1 text-black">
+          Game: {match.gameA}-{match.gameB}
+        </span>
       </div>
 
-      <ScoreLine
-        name={match.teamA || "Team A"}
-        serving={match.serving === "A"}
-        sets={match.sets.map((s) => s.a)}
-        game={match.gameA}
-      />
-      <ScoreLine
-        name={match.teamB || "Team B"}
-        serving={match.serving === "B"}
-        sets={match.sets.map((s) => s.b)}
-        game={match.gameB}
-      />
+      <div className={compact ? "space-y-2" : "space-y-3 p-4"}>
+        <PublicScoreRow
+          name={match.teamA || "Team A"}
+          serving={match.serving === "A"}
+          sets={match.sets.map((s) => s.a)}
+          game={match.gameA}
+          showSet3={showSet3}
+          compact={compact}
+        />
+
+        <PublicScoreRow
+          name={match.teamB || "Team B"}
+          serving={match.serving === "B"}
+          sets={match.sets.map((s) => s.b)}
+          game={match.gameB}
+          showSet3={showSet3}
+          compact={compact}
+        />
+      </div>
     </div>
   );
 }
 
-function ScoreLine({
+function PublicScoreRow({
   name,
   serving,
   sets,
   game,
+  showSet3,
+  compact,
 }: {
   name: string;
   serving: boolean;
   sets: string[];
   game: string;
+  showSet3: boolean;
+  compact?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_repeat(3,42px)_64px] items-center gap-2 py-2 text-sm">
-      <div className="flex items-center gap-2 font-bold">
-        <span className={`h-2.5 w-2.5 rounded-full ${serving ? "bg-green-400" : "bg-transparent"}`} />
+    <div
+      className={`grid items-center gap-3 rounded-3xl bg-black/40 ${
+        showSet3
+          ? "grid-cols-[1fr_54px_54px_54px_70px]"
+          : "grid-cols-[1fr_54px_54px_70px]"
+      } ${compact ? "px-4 py-3 text-sm" : "px-6 py-6 text-xl"}`}
+    >
+      <div className="flex items-center gap-4 font-black">
+        <span
+          className={`rounded-full ${serving ? "bg-green-400" : "bg-transparent"} ${
+            compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5"
+          }`}
+        />
         {name}
       </div>
-      <div className="text-center font-bold">{sets[0] ?? "-"}</div>
-      <div className="text-center font-bold">{sets[1] ?? "-"}</div>
-      <div className="text-center font-bold">{sets[2] ?? "-"}</div>
-      <div className="text-center text-lg font-black text-green-400">{game}</div>
+
+      <div className="text-center font-black">{sets[0] ?? "-"}</div>
+      <div className="text-center font-black">{sets[1] ?? "-"}</div>
+
+      {showSet3 && <div className="text-center font-black">{sets[2] ?? "-"}</div>}
+
+      <div className="text-center text-2xl font-black text-green-400">
+        {game}
+      </div>
     </div>
+  );
+}
+
+function ControlSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-8">
+      <p className="mb-3 font-bold">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function Input({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm text-zinc-400">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl border border-white/10 bg-white/10 p-4 outline-none focus:border-green-400"
+      />
+    </label>
+  );
+}
+
+function GameButtons({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl bg-black/35 p-4">
+      <p className="mb-3 font-bold">{label}</p>
+      <div className="grid grid-cols-3 gap-2">
+        {gameOptions.map((option) => (
+          <button
+            key={option}
+            onClick={() => onChange(option)}
+            className={`rounded-xl py-3 font-black ${
+              value === option
+                ? "bg-green-400 text-black"
+                : "bg-white/10 text-white"
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: MatchStatus }) {
+  const styles = {
+    Pending: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
+    "In Progress": "border-green-400/40 bg-green-400/10 text-green-300",
+    Finished: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
+  };
+
+  return (
+    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}>
+      {status}
+    </span>
   );
 }
