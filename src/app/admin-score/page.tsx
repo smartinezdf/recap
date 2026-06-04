@@ -25,53 +25,57 @@ type Match = {
 
 const gameOptions = ["0", "15", "30", "40", "AD", "GAME"];
 
-const emptyForm: Match = {
-  id: 0,
-  club: "",
-  court: "",
-  tournament: "",
-  round: "",
-  time: "",
-  teamA: "",
-  teamB: "",
-  status: "Pending",
-  thirdSetMode: "Full 3rd Set",
-  sets: [
-    { a: "0", b: "0" },
-    { a: "0", b: "0" },
-  ],
-  gameA: "0",
-  gameB: "0",
-  serving: "A",
-};
+function getEmptyForm(): Match {
+  return {
+    id: 0,
+    club: "",
+    court: "",
+    tournament: "",
+    round: "",
+    time: "",
+    teamA: "",
+    teamB: "",
+    status: "Pending",
+    thirdSetMode: "Full 3rd Set",
+    sets: [
+      { a: "0", b: "0" },
+      { a: "0", b: "0" },
+    ],
+    gameA: "0",
+    gameB: "0",
+    serving: "A",
+  };
+}
 
 export default function AdminScorePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [activeMatchId, setActiveMatchId] = useState<number | null>(null);
-  const [form, setForm] = useState<Match>(emptyForm);
+  const [form, setForm] = useState<Match>(getEmptyForm());
 
   const activeMatch = matches.find((m) => m.id === activeMatchId);
 
   function updateForm(field: keyof Match, value: any) {
-    setForm({ ...form, [field]: value });
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   function saveMatch() {
     const newMatch = { ...form, id: Date.now() };
-    setMatches([...matches, newMatch]);
+    setMatches((current) => [...current, newMatch]);
     setActiveMatchId(newMatch.id);
-    setForm(emptyForm);
+    setForm(getEmptyForm());
   }
 
   function updateMatch(updated: Match) {
-    setMatches(matches.map((m) => (m.id === updated.id ? updated : m)));
+    setMatches((current) =>
+      current.map((m) => (m.id === updated.id ? updated : m))
+    );
   }
 
   function deleteMatch(id: number) {
     const confirmed = window.confirm("Delete this match?");
     if (!confirmed) return;
 
-    setMatches(matches.filter((m) => m.id !== id));
+    setMatches((current) => current.filter((m) => m.id !== id));
 
     if (activeMatchId === id) {
       setActiveMatchId(null);
@@ -80,20 +84,12 @@ export default function AdminScorePage() {
 
   function addSet(match: Match) {
     if (match.sets.length >= 3) return;
-
-    updateMatch({
-      ...match,
-      sets: [...match.sets, { a: "0", b: "0" }],
-    });
+    updateMatch({ ...match, sets: [...match.sets, { a: "0", b: "0" }] });
   }
 
   function removeSet(match: Match) {
     if (match.sets.length <= 1) return;
-
-    updateMatch({
-      ...match,
-      sets: match.sets.slice(0, -1),
-    });
+    updateMatch({ ...match, sets: match.sets.slice(0, -1) });
   }
 
   function updateSet(match: Match, index: number, side: "a" | "b", value: string) {
@@ -143,7 +139,7 @@ export default function AdminScorePage() {
             </button>
 
             <p className="text-sm text-zinc-500">
-              After saving, the form clears and the match appears on the right for live editing.
+              After saving, this form clears and the match appears on the right.
             </p>
           </div>
         </div>
@@ -170,15 +166,11 @@ export default function AdminScorePage() {
                     : "border-white/10 bg-white/[0.06]"
                 }`}
               >
-                <button
-                  onClick={() => setActiveMatchId(match.id)}
-                  className="w-full text-left"
-                >
+                <button onClick={() => setActiveMatchId(match.id)} className="w-full text-left">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm text-green-400">
                       {match.club || "Club"} · {match.court || "Court"}
                     </p>
-
                     <StatusBadge status={match.status} />
                   </div>
 
@@ -186,9 +178,11 @@ export default function AdminScorePage() {
                     {match.teamA || "Team A"} vs {match.teamB || "Team B"}
                   </h3>
 
-                  <p className="text-zinc-400">
+                  <p className="mb-5 text-zinc-400">
                     {match.tournament || "Tournament"} · {match.round || "Round"} · {match.time || "Time"}
                   </p>
+
+                  <MiniScore match={match} />
                 </button>
 
                 <button
@@ -204,9 +198,7 @@ export default function AdminScorePage() {
           {activeMatch && (
             <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.08] p-6 shadow-2xl">
               <div className="mb-6">
-                <p className="text-sm uppercase tracking-[0.3em] text-green-400">
-                  Editing
-                </p>
+                <p className="text-sm uppercase tracking-[0.3em] text-green-400">Editing</p>
                 <h2 className="text-3xl font-black">
                   {activeMatch.teamA} vs {activeMatch.teamB}
                 </h2>
@@ -215,7 +207,9 @@ export default function AdminScorePage() {
                 </p>
               </div>
 
-              <div className="mb-8">
+              <MiniScore match={activeMatch} />
+
+              <div className="mb-8 mt-8">
                 <p className="mb-3 font-bold">Match status</p>
                 <div className="grid gap-3 md:grid-cols-3">
                   {(["Pending", "In Progress", "Finished"] as MatchStatus[]).map((status) => (
@@ -275,9 +269,7 @@ export default function AdminScorePage() {
                   <button
                     onClick={() => updateMatch({ ...activeMatch, serving: "A" })}
                     className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "A"
-                        ? "bg-green-400 text-black"
-                        : "bg-white/10"
+                      activeMatch.serving === "A" ? "bg-green-400 text-black" : "bg-white/10"
                     }`}
                   >
                     ● {activeMatch.teamA}
@@ -285,9 +277,7 @@ export default function AdminScorePage() {
                   <button
                     onClick={() => updateMatch({ ...activeMatch, serving: "B" })}
                     className={`rounded-2xl px-5 py-4 font-bold ${
-                      activeMatch.serving === "B"
-                        ? "bg-green-400 text-black"
-                        : "bg-white/10"
+                      activeMatch.serving === "B" ? "bg-green-400 text-black" : "bg-white/10"
                     }`}
                   >
                     ● {activeMatch.teamB}
@@ -312,7 +302,6 @@ export default function AdminScorePage() {
                     >
                       + Add set
                     </button>
-
                     <button
                       onClick={() => removeSet(activeMatch)}
                       disabled={activeMatch.sets.length <= 1}
@@ -325,22 +314,17 @@ export default function AdminScorePage() {
 
                 <div className="space-y-3">
                   {activeMatch.sets.map((set, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-[90px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3"
-                    >
+                    <div key={index} className="grid grid-cols-[90px_1fr_1fr] gap-3 rounded-2xl bg-black/35 p-3">
                       <div className="flex items-center text-zinc-400">
                         {index === 2 && activeMatch.thirdSetMode === "Super Tiebreak"
                           ? "Super TB"
                           : `Set ${index + 1}`}
                       </div>
-
                       <input
                         value={set.a}
                         onChange={(e) => updateSet(activeMatch, index, "a", e.target.value)}
                         className="rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold"
                       />
-
                       <input
                         value={set.b}
                         onChange={(e) => updateSet(activeMatch, index, "b", e.target.value)}
@@ -358,68 +342,56 @@ export default function AdminScorePage() {
   );
 }
 
-function Input({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function MiniScore({ match }: { match: Match }) {
   return (
-    <label className="grid gap-2">
-      <span className="text-sm text-zinc-400">{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-2xl border border-white/10 bg-white/10 p-4 outline-none focus:border-green-400"
-      />
-    </label>
-  );
-}
-
-function GameButtons({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl bg-black/35 p-4">
-      <p className="mb-3 font-bold">{label}</p>
-      <div className="grid grid-cols-3 gap-2">
-        {gameOptions.map((option) => (
-          <button
-            key={option}
-            onClick={() => onChange(option)}
-            className={`rounded-xl py-3 font-black ${
-              value === option
-                ? "bg-green-400 text-black"
-                : "bg-white/10 text-white"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
+    <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
+      <div className="mb-3 grid grid-cols-[1fr_repeat(3,42px)_64px] gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+        <div>Team</div>
+        <div className="text-center">S1</div>
+        <div className="text-center">S2</div>
+        <div className="text-center">
+          {match.thirdSetMode === "Super Tiebreak" ? "TB" : "S3"}
+        </div>
+        <div className="text-center">Game</div>
       </div>
+
+      <ScoreLine
+        name={match.teamA || "Team A"}
+        serving={match.serving === "A"}
+        sets={match.sets.map((s) => s.a)}
+        game={match.gameA}
+      />
+      <ScoreLine
+        name={match.teamB || "Team B"}
+        serving={match.serving === "B"}
+        sets={match.sets.map((s) => s.b)}
+        game={match.gameB}
+      />
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: MatchStatus }) {
-  const styles = {
-    Pending: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
-    "In Progress": "border-green-400/40 bg-green-400/10 text-green-300",
-    Finished: "border-zinc-400/40 bg-zinc-400/10 text-zinc-300",
-  };
-
+function ScoreLine({
+  name,
+  serving,
+  sets,
+  game,
+}: {
+  name: string;
+  serving: boolean;
+  sets: string[];
+  game: string;
+}) {
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}>
-      {status}
-    </span>
+    <div className="grid grid-cols-[1fr_repeat(3,42px)_64px] items-center gap-2 py-2 text-sm">
+      <div className="flex items-center gap-2 font-bold">
+        <span className={`h-2.5 w-2.5 rounded-full ${serving ? "bg-green-400" : "bg-transparent"}`} />
+        {name}
+      </div>
+      <div className="text-center font-bold">{sets[0] ?? "-"}</div>
+      <div className="text-center font-bold">{sets[1] ?? "-"}</div>
+      <div className="text-center font-bold">{sets[2] ?? "-"}</div>
+      <div className="text-center text-lg font-black text-green-400">{game}</div>
+    </div>
   );
 }
