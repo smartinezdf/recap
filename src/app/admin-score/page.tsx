@@ -6,6 +6,11 @@ import { supabase } from "@/lib/supabaseClient";
 
 const ACCENT = "#3FCD31";
 
+const CLUB_PINS: Record<string, string> = {
+  "9700": "Garana Padel",
+  "4600": "Upadel",
+};
+
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
 type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
 
@@ -28,10 +33,66 @@ type Partido = {
 
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
 const PUNTOS = ["0", "15", "30", "40", "AD", "GAME"];
+const [clubActual, setClubActual] = useState<string | null>(null);
+const [pin, setPin] = useState("");
+const [pinError, setPinError] = useState("");
+if (!clubActual) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#050806] px-5 text-white">
+      <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.08] p-8 shadow-2xl">
+        <p
+          className="mb-2 text-xs font-bold uppercase tracking-[0.35em]"
+          style={{ color: ACCENT }}
+        >
+          Recap Admin
+        </p>
+
+        <h1 className="mb-2 text-3xl font-black">Control de Score</h1>
+
+        <p className="mb-6 text-sm text-zinc-400">
+          Ingresa el PIN del club para continuar.
+        </p>
+
+        <input
+          type="password"
+          value={pin}
+          onChange={(e) => {
+            setPin(e.target.value);
+            setPinError("");
+          }}
+          placeholder="PIN"
+          className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-[#3FCD31]"
+        />
+
+        {pinError && (
+          <p className="mt-3 text-sm text-red-300">{pinError}</p>
+        )}
+
+        <button
+          onClick={() => {
+            const club = CLUB_PINS[pin];
+
+            if (!club) {
+              setPinError("PIN incorrecto.");
+              return;
+            }
+
+            setClubActual(club);
+            setPin("");
+          }}
+          className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
+          style={{ backgroundColor: ACCENT }}
+        >
+          Entrar
+        </button>
+      </div>
+    </main>
+  );
+}
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
-    club: "Garana Padel",
+    club: clubActual,
     cancha,
     tournament: "",
     round: "",
@@ -71,7 +132,7 @@ export default function AdminScorePage() {
   const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
 
   useEffect(() => {
-    cargarPartidos();
+    if (clubActual)cargarPartidos();
   }, []);
 
   async function cargarPartidos() {
@@ -81,6 +142,7 @@ export default function AdminScorePage() {
     const { data, error } = await supabase
       .from("live_matches")
       .select("*")
+      .eq("club", clubActual)
       .order("created_at", { ascending: false });
 
     console.log("LIVE MATCHES DATA:", data);
@@ -140,7 +202,7 @@ export default function AdminScorePage() {
       const { error } = await supabase
         .from("live_matches")
         .update({
-          club: "Garana Padel",
+          club: clubActual,
           cancha: canchaSeleccionada,
           tournament: form.tournament,
           round: form.round,
@@ -167,7 +229,7 @@ export default function AdminScorePage() {
     const { data, error } = await supabase
       .from("live_matches")
       .insert({
-        club: "Garana Padel",
+        club: clubActual,
         cancha: canchaSeleccionada,
         tournament: form.tournament,
         round: form.round,
@@ -297,7 +359,7 @@ export default function AdminScorePage() {
               className="text-xs uppercase tracking-[0.35em] font-bold"
               style={{ color: ACCENT }}
             >
-              Garana Padel
+              {clubActual}
             </p>
             <h1 className="text-2xl font-black">Control de Score</h1>
           </div>
