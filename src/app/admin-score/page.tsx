@@ -70,12 +70,19 @@ export default function AdminScorePage() {
   const [cargando, setCargando] = useState(true);
 
   const partidosCancha = useMemo(
-    () => partidos.filter((partido) => partido.cancha === canchaSeleccionada),
+    () =>
+      partidos.filter(
+        (partido) =>
+          String(partido.cancha).trim() === String(canchaSeleccionada).trim()
+      ),
     [partidos, canchaSeleccionada]
   );
 
   const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
-
+  
+  console.log("CANCHA SELECCIONADA:", canchaSeleccionada);
+  console.log("PARTIDOS:", partidos);
+  
   useEffect(() => {
     cargarPartidos();
   }, []);
@@ -88,15 +95,13 @@ export default function AdminScorePage() {
     .select("*")
     .order("created_at", { ascending: false });
 
-    console.log("LIVE MATCHES DATA:", data);
-    console.log("LIVE MATCHES ERROR:", error);
+  console.log("LIVE MATCHES DATA:", data);
+  console.log("LIVE MATCHES ERROR:", error);
 
   if (!error) {
     setPartidos((data || []) as Partido[]);
   }
 
-  setCargando(false);
-}
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
