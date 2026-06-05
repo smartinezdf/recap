@@ -106,15 +106,9 @@ async function cargarPartidos() {
     setPartidos((data || []) as Partido[]);
   }
    
-    setCargando(false);
-}
-
-    if (!error) {
-      setPartidos((data || []) as Partido[]);
-    }
-
-    setCargando(false);
+  setCargando(false);
   }
+
 
   function seleccionarCancha(cancha: string) {
     setCanchaSeleccionada(cancha);
