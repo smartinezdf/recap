@@ -26,18 +26,8 @@ type Partido = {
   serving: "A" | "B";
 };
 
-
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
-const puntos = ["0", "15", "30", "40", "AD", "GAME"];
-
-function getTodayCaracas() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+const PUNTOS = ["0", "15", "30", "40", "AD", "GAME"];
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
@@ -73,42 +63,38 @@ export default function AdminScorePage() {
     () =>
       partidos.filter(
         (partido) =>
-          String(partido.cancha).trim() === String(canchaSeleccionada).trim()
+          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
       ),
     [partidos, canchaSeleccionada]
   );
 
   const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
-  
-  console.log("CANCHA SELECCIONADA:", canchaSeleccionada);
-  console.log("PARTIDOS:", partidos);
-  
+
   useEffect(() => {
     cargarPartidos();
   }, []);
 
-async function cargarPartidos() {
-  setCargando(true);
-  setErrorFormulario("");
+  async function cargarPartidos() {
+    setCargando(true);
+    setErrorFormulario("");
 
-  const { data, error } = await supabase
-    .from("live_matches")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("live_matches")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  console.log("LIVE MATCHES DATA:", data);
-  console.log("LIVE MATCHES ERROR:", error);
+    console.log("LIVE MATCHES DATA:", data);
+    console.log("LIVE MATCHES ERROR:", error);
 
-  if (!error) {
-    setErrorFormulario(error.message);
-    setPartidos([]);
-  } else {
-    setPartidos((data || []) as Partido[]);
+    if (error) {
+      setErrorFormulario(error.message);
+      setPartidos([]);
+    } else {
+      setPartidos((data || []) as Partido[]);
+    }
+
+    setCargando(false);
   }
-   
-  setCargando(false);
-  }
-
 
   function seleccionarCancha(cancha: string) {
     setCanchaSeleccionada(cancha);
@@ -116,11 +102,14 @@ async function cargarPartidos() {
     setEditandoId(null);
     setErrorFormulario("");
 
-    const primerPartido = partidos.find((partido) => partido.cancha === cancha);
+    const primerPartido = partidos.find(
+      (partido) => String(partido.cancha || "").trim() === cancha
+    );
+
     setPartidoActivoId(primerPartido?.id ?? null);
   }
 
-  function actualizarForm(campo: string, valor: any) {
+  function actualizarForm(campo: string, valor: string) {
     setErrorFormulario("");
     setForm((actual) => ({ ...actual, [campo]: valor }));
   }
@@ -163,14 +152,15 @@ async function cargarPartidos() {
         .eq("id", editandoId);
 
       if (error) {
-        setErrorFormulario("No se pudo actualizar el partido.");
+        setErrorFormulario(error.message);
         return;
       }
 
+      const idActualizado = editandoId;
       setEditandoId(null);
       setForm(formularioVacio(canchaSeleccionada));
       await cargarPartidos();
-      setPartidoActivoId(editandoId);
+      setPartidoActivoId(idActualizado);
       return;
     }
 
@@ -195,7 +185,7 @@ async function cargarPartidos() {
       .single();
 
     if (error) {
-      setErrorFormulario("No se pudo guardar el partido.");
+      setErrorFormulario(error.message);
       return;
     }
 
@@ -244,7 +234,7 @@ async function cargarPartidos() {
       .eq("id", id);
 
     if (error) {
-      setErrorFormulario("No se pudo actualizar el score.");
+      setErrorFormulario(error.message);
       return;
     }
 
@@ -261,7 +251,7 @@ async function cargarPartidos() {
     const { error } = await supabase.from("live_matches").delete().eq("id", id);
 
     if (error) {
-      setErrorFormulario("No se pudo eliminar el partido.");
+      setErrorFormulario(error.message);
       return;
     }
 
@@ -330,7 +320,9 @@ async function cargarPartidos() {
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {CANCHAS.map((cancha) => {
-              const total = partidos.filter((p) => p.cancha === cancha).length;
+              const total = partidos.filter(
+                (p) => String(p.cancha || "").trim() === cancha
+              ).length;
 
               return (
                 <button
@@ -808,7 +800,7 @@ function BotonesPuntos({
     <div className="rounded-2xl bg-black/35 p-4">
       <p className="mb-3 font-bold">{label}</p>
       <div className="grid grid-cols-3 gap-2">
-        {puntos.map((option) => (
+        {PUNTOS.map((option) => (
           <button
             key={option}
             onClick={() => onChange(option)}
