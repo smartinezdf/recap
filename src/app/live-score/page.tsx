@@ -35,7 +35,11 @@ export default function LiveScorePage() {
   const [cargando, setCargando] = useState(true);
 
   const partidosCancha = useMemo(
-    () => partidos.filter((partido) => partido.cancha === canchaSeleccionada),
+    () =>
+      partidos.filter(
+        (partido) =>
+          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+      ),
     [partidos, canchaSeleccionada]
   );
 
@@ -62,9 +66,10 @@ export default function LiveScorePage() {
     const { data, error } = await supabase
       .from("live_matches")
       .select("*")
-      .eq("club", "Garana Padel")
-      .eq("match_date", new Date().toISOString().slice(0, 10))
-      .order("match_time", { ascending: true });
+      .order("created_at", { ascending: false });
+
+    console.log("LIVE SCORE DATA:", data);
+    console.log("LIVE SCORE ERROR:", error);
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
@@ -93,9 +98,7 @@ export default function LiveScorePage() {
                 Garana Padel
               </p>
 
-              <h1 className="text-2xl font-black text-black">
-                Score en Vivo
-              </h1>
+              <h1 className="text-2xl font-black text-black">Score en Vivo</h1>
             </div>
           </div>
 
@@ -115,8 +118,7 @@ export default function LiveScorePage() {
               </Link>
 
               <Link
-                className="rounded-2xl p-4 font-bold text-black"
-                style={{ backgroundColor: ACCENT }}
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
                 href="/live-score"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
@@ -133,8 +135,7 @@ export default function LiveScorePage() {
 
       <section className="mx-auto max-w-7xl px-5 py-8">
         <div className="mb-6">
-          <h2
-            className="text-4xl font-black md:text-6xl">
+          <h2 className="text-4xl font-black md:text-6xl">
             Partidos de Hoy
           </h2>
 
@@ -149,12 +150,14 @@ export default function LiveScorePage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {CANCHAS.map((cancha) => {
               const total = partidos.filter(
-                (partido) => partido.cancha === cancha
+                (partido) =>
+                  String(partido.cancha || "").trim() === String(cancha).trim()
               ).length;
 
               const enVivo = partidos.filter(
                 (partido) =>
-                  partido.cancha === cancha && partido.status === "En juego"
+                  String(partido.cancha || "").trim() === String(cancha).trim() &&
+                  partido.status === "En juego"
               ).length;
 
               return (
@@ -205,8 +208,7 @@ export default function LiveScorePage() {
 
         {partidosCancha.length === 0 && !cargando && (
           <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-            No hay score disponible para {canchaSeleccionada} en este
-            momento.
+            No hay score disponible para {canchaSeleccionada} en este momento.
           </div>
         )}
 
