@@ -86,8 +86,17 @@ export default function AdminScorePage() {
   const { data, error } = await supabase
     .from("live_matches")
     .select("*")
-    .eq("club", "Garana Padel")
-    .order("match_time", { ascending: true });
+    .order("created_at", { ascending: false });
+
+    console.log("LIVE MATCHES DATA:", data);
+    console.log("LIVE MATCHES ERROR:", error);
+
+  if (!error) {
+    setPartidos((data || []) as Partido[]);
+  }
+
+  setCargando(false);
+}
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
