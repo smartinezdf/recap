@@ -33,13 +33,11 @@ type Partido = {
 
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
 const PUNTOS = ["0", "15", "30", "40", "AD", "GAME"];
-const [clubActual, setClubActual] = useState<string | null>(null);
-const [pin, setPin] = useState("");
-const [pinError, setPinError] = useState("");
+
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
-    club: clubActual,
+    club: "",
     cancha,
     tournament: "",
     round: "",
@@ -59,6 +57,9 @@ function formularioVacio(cancha = "Cancha 1") {
 }
 
 export default function AdminScorePage() {
+  const [clubActual, setClubActual] = useState<string | null>(null);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
   const [canchaSeleccionada, setCanchaSeleccionada] = useState("Cancha 1");
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [form, setForm] = useState(formularioVacio("Cancha 1"));
@@ -133,8 +134,10 @@ export default function AdminScorePage() {
   const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
 
   useEffect(() => {
-    if (clubActual)cargarPartidos();
-  }, []);
+    if (clubActual) {
+      cargarPartidos();
+    }
+  }, [clubActual]);
 
   async function cargarPartidos() {
     setCargando(true);
