@@ -87,8 +87,9 @@ export default function AdminScorePage() {
     cargarPartidos();
   }, []);
 
-  async function cargarPartidos() {
-    setCargando(true);
+async function cargarPartidos() {
+  setCargando(true);
+  setErrorFormulario("");
 
   const { data, error } = await supabase
     .from("live_matches")
@@ -99,9 +100,14 @@ export default function AdminScorePage() {
   console.log("LIVE MATCHES ERROR:", error);
 
   if (!error) {
+    setErrorFormulario(error.message);
+    setPartidos([]);
+  } else {
     setPartidos((data || []) as Partido[]);
   }
-
+   
+    setCargando(false);
+}
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
