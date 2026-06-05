@@ -50,14 +50,16 @@ export default function LiveScorePage() {
       .channel("live_matches_changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "live_matches" },
+        { event: "*", schema: "public", table: "live_matches", },
         (payload) => {
           console.log("Realtime update", payload);
 
           cargarPartidos();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
