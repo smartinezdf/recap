@@ -51,7 +51,11 @@ export default function LiveScorePage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "live_matches" },
-        () => cargarPartidos()
+        (payload) => {
+          console.log("Realtime update", payload);
+
+          cargarPartidos();
+        }
       )
       .subscribe();
 
