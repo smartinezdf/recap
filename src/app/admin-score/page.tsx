@@ -102,7 +102,7 @@ export default function AdminScorePage() {
 
           <button
             onClick={() => {
-              const club = CLUB_PINS[pin];
+              const club = CLUB_PINS[pin.trim()];
 
               if (!club) {
                 setPinError("PIN incorrecto.");
@@ -111,6 +111,7 @@ export default function AdminScorePage() {
 
               setClubActual(club);
               setPin("");
+              setForm(formularioVacio("Cancha 1"));
             }}
             className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
             style={{ backgroundColor: ACCENT }}
