@@ -26,8 +26,18 @@ type Partido = {
   serving: "A" | "B";
 };
 
+
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
 const puntos = ["0", "15", "30", "40", "AD", "GAME"];
+
+function getTodayCaracas() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
@@ -73,12 +83,11 @@ export default function AdminScorePage() {
   async function cargarPartidos() {
     setCargando(true);
 
-    const { data, error } = await supabase
-      .from("live_matches")
-      .select("*")
-      .eq("club", "Garana Padel")
-      .eq("match_date", new Date().toISOString().slice(0, 10))
-      .order("match_time", { ascending: true });
+  const { data, error } = await supabase
+    .from("live_matches")
+    .select("*")
+    .eq("club", "Garana Padel")
+    .order("match_time", { ascending: true });
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
