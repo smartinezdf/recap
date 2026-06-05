@@ -36,59 +36,6 @@ const PUNTOS = ["0", "15", "30", "40", "AD", "GAME"];
 const [clubActual, setClubActual] = useState<string | null>(null);
 const [pin, setPin] = useState("");
 const [pinError, setPinError] = useState("");
-if (!clubActual) {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-[#050806] px-5 text-white">
-      <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.08] p-8 shadow-2xl">
-        <p
-          className="mb-2 text-xs font-bold uppercase tracking-[0.35em]"
-          style={{ color: ACCENT }}
-        >
-          Recap Admin
-        </p>
-
-        <h1 className="mb-2 text-3xl font-black">Control de Score</h1>
-
-        <p className="mb-6 text-sm text-zinc-400">
-          Ingresa el PIN del club para continuar.
-        </p>
-
-        <input
-          type="password"
-          value={pin}
-          onChange={(e) => {
-            setPin(e.target.value);
-            setPinError("");
-          }}
-          placeholder="PIN"
-          className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-[#3FCD31]"
-        />
-
-        {pinError && (
-          <p className="mt-3 text-sm text-red-300">{pinError}</p>
-        )}
-
-        <button
-          onClick={() => {
-            const club = CLUB_PINS[pin];
-
-            if (!club) {
-              setPinError("PIN incorrecto.");
-              return;
-            }
-
-            setClubActual(club);
-            setPin("");
-          }}
-          className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
-          style={{ backgroundColor: ACCENT }}
-        >
-          Entrar
-        </button>
-      </div>
-    </main>
-  );
-}
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
@@ -119,6 +66,60 @@ export default function AdminScorePage() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [errorFormulario, setErrorFormulario] = useState("");
   const [cargando, setCargando] = useState(true);
+
+  if (!clubActual) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#050806] px-5 text-white">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.08] p-8 shadow-2xl">
+          <p
+            className="mb-2 text-xs font-bold uppercase tracking-[0.35em]"
+            style={{ color: ACCENT }}
+          >
+            Recap Admin
+          </p>
+
+          <h1 className="mb-2 text-3xl font-black">Control de Score</h1>
+
+          <p className="mb-6 text-sm text-zinc-400">
+            Ingresa el PIN del club para continuar.
+          </p>
+
+          <input
+            type="password"
+            value={pin}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setPinError("");
+            }}
+            placeholder="PIN"
+            className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-white outline-none focus:border-[#3FCD31]"
+          />
+
+          {pinError && (
+            <p className="mt-3 text-sm text-red-300">{pinError}</p>
+          )}
+
+          <button
+            onClick={() => {
+              const club = CLUB_PINS[pin];
+
+              if (!club) {
+                setPinError("PIN incorrecto.");
+                return;
+              }
+
+              setClubActual(club);
+              setPin("");
+            }}
+            className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
+            style={{ backgroundColor: ACCENT }}
+          >
+            Entrar
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   const partidosCancha = useMemo(
     () =>
