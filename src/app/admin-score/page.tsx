@@ -67,7 +67,23 @@ export default function AdminScorePage() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [errorFormulario, setErrorFormulario] = useState("");
   const [cargando, setCargando] = useState(true);
-
+  
+  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
+  const partidosCancha = useMemo(
+    () =>
+      partidos.filter(
+        (partido) =>
+          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+      ),
+    [partidos, canchaSeleccionada]
+  );
+  
+  useEffect(() => {
+    if (clubActual) {
+      cargarPartidos();
+    }
+  }, [clubActual]);
+  
   if (!clubActual) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050806] px-5 text-white">
@@ -122,23 +138,6 @@ export default function AdminScorePage() {
       </main>
     );
   }
-
-  const partidosCancha = useMemo(
-    () =>
-      partidos.filter(
-        (partido) =>
-          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
-      ),
-    [partidos, canchaSeleccionada]
-  );
-
-  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
-
-  useEffect(() => {
-    if (clubActual) {
-      cargarPartidos();
-    }
-  }, [clubActual]);
 
   async function cargarPartidos() {
     setCargando(true);
