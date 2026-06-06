@@ -475,7 +475,7 @@ export default function AdminScorePage() {
 
             {partidosCancha.length === 0 && !cargando && (
               <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-                No hay partidos creados para {canchaSeleccionada} hoy.
+                No hay score disponible para {canchaSeleccionada} hoy.
               </div>
             )}
 
