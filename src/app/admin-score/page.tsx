@@ -56,7 +56,6 @@ type Partido = {
 };
 
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
-const PADEL_POINTS = ["0", "15", "30", "40", "AD"];
 
 function formularioVacio(cancha = "Cancha 1") {
   return {
@@ -87,6 +86,13 @@ function toNumber(value: string | undefined) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function nextPointPadel(point: string) {
+  if (point === "0") return "15";
+  if (point === "15") return "30";
+  if (point === "30") return "40";
+  return point;
+}
+
 function isSetCompletePadel(set: { a: string; b: string }) {
   const a = toNumber(set.a);
   const b = toNumber(set.b);
@@ -104,19 +110,6 @@ function isSetCompletePickleball(set: { a: string; b: string }) {
   return (a >= 11 || b >= 11) && Math.abs(a - b) >= 2;
 }
 
-function getActiveSetIndex(partido: Partido) {
-  const sport = partido.sport || "padel";
-
-  const index = partido.sets.findIndex((set) =>
-    sport === "pickleball"
-      ? !isSetCompletePickleball(set)
-      : !isSetCompletePadel(set)
-  );
-
-  if (index === -1) return partido.sets.length - 1;
-  return index;
-}
-
 function countSetsWon(sets: { a: string; b: string }[]) {
   let a = 0;
   let b = 0;
@@ -132,11 +125,35 @@ function countSetsWon(sets: { a: string; b: string }[]) {
   return { a, b };
 }
 
-function nextPointPadel(point: string) {
-  if (point === "0") return "15";
-  if (point === "15") return "30";
-  if (point === "30") return "40";
-  return point;
+function getActiveSetIndex(partido: Partido) {
+  const sport = partido.sport || "padel";
+
+  const index = partido.sets.findIndex((set) =>
+    sport === "pickleball"
+      ? !isSetCompletePickleball(set)
+      : !isSetCompletePadel(set)
+  );
+
+  if (index === -1) return partido.sets.length - 1;
+  return index;
+}
+
+function getActiveHeaderLabel(partido: Partido, index: number) {
+  const sport = partido.sport || "padel";
+  const activeIndex = getActiveSetIndex(partido);
+
+  if (index !== activeIndex) return `S${index + 1}`;
+
+  const set = partido.sets[index];
+  const a = toNumber(set?.a);
+  const b = toNumber(set?.b);
+
+  if (sport === "pickleball") return `S${index + 1}`;
+
+  if (index === 2 && partido.third_set_mode === "Super tiebreak") return "ST";
+  if (a === 6 && b === 6) return "TB";
+
+  return "GAME";
 }
 
 export default function AdminScorePage() {
@@ -156,12 +173,15 @@ export default function AdminScorePage() {
     () =>
       partidos.filter(
         (partido) =>
-          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+          String(partido.cancha || "").trim() ===
+          String(canchaSeleccionada).trim()
       ),
     [partidos, canchaSeleccionada]
   );
 
-  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
+  const partidoActivo = partidos.find(
+    (partido) => partido.id === partidoActivoId
+  );
 
   useEffect(() => {
     if (clubActual) cargarPartidos();
@@ -369,7 +389,6 @@ export default function AdminScorePage() {
     setErrorFormulario("");
   }
 
-
   async function updateMatch(id: string, cambios: Partial<Partido>) {
     const { error } = await supabase
       .from("live_matches")
@@ -407,22 +426,6 @@ export default function AdminScorePage() {
     if (editandoId === id) cancelarEdicion();
   }
 
-  function agregarSet(partido: Partido) {
-    if (partido.sets.length >= 3) return;
-
-    updateMatch(partido.id, {
-      sets: [...partido.sets, { a: "0", b: "0" }],
-    });
-  }
-
-  function quitarSet(partido: Partido) {
-    if (partido.sets.length <= 1) return;
-
-    updateMatch(partido.id, {
-      sets: partido.sets.slice(0, -1),
-    });
-  }
-
   function actualizarSet(
     partido: Partido,
     index: number,
@@ -440,23 +443,29 @@ export default function AdminScorePage() {
     });
   }
 
+  function cambiarFormatoTercerSet(partido: Partido, mode: ModoTercerSet) {
+    updateMatch(partido.id, {
+      third_set_mode: mode,
+      game_a: "0",
+      game_b: "0",
+    });
+  }
+
   function puntoPadel(partido: Partido, ganador: "A" | "B") {
     const sets = partido.sets?.length ? [...partido.sets] : [{ a: "0", b: "0" }];
     const activeSetIndex = getActiveSetIndex(partido);
-    const setActual = sets[activeSetIndex];
+    const setActual = sets[activeSetIndex] || { a: "0", b: "0" };
 
     const setA = toNumber(setActual.a);
     const setB = toNumber(setActual.b);
 
     const isThirdSet = activeSetIndex === 2;
-    const isSuperTie =
-      isThirdSet && partido.third_set_mode === "Super tiebreak";
+    const isSuperTie = isThirdSet && partido.third_set_mode === "Super tiebreak";
     const isTieBreak = isSuperTie || (setA === 6 && setB === 6);
 
     let gameA = partido.game_a || "0";
     let gameB = partido.game_b || "0";
     let serving = partido.serving || "A";
-    let serverCounter = partido.server_number || 1;
 
     if (isTieBreak) {
       let tbA = toNumber(gameA);
@@ -474,16 +483,14 @@ export default function AdminScorePage() {
 
       if ((tbA >= target || tbB >= target) && Math.abs(tbA - tbB) >= 2) {
         if (isSuperTie) {
-          sets[activeSetIndex] = {
-            a: String(tbA),
-            b: String(tbB),
-          };
+          sets[activeSetIndex] = { a: String(tbA), b: String(tbB) };
         } else {
           sets[activeSetIndex] =
             tbA > tbB ? { a: "7", b: "6" } : { a: "6", b: "7" };
         }
 
         const won = countSetsWon(sets);
+
         updateMatch(partido.id, {
           sets,
           game_a: "0",
@@ -499,7 +506,6 @@ export default function AdminScorePage() {
         game_a: String(tbA),
         game_b: String(tbB),
         serving,
-        server_number: serverCounter + 1,
         status: "En juego",
       });
       return;
@@ -512,7 +518,11 @@ export default function AdminScorePage() {
 
     if (winnerPoint === "AD") {
       gameWon = true;
-    } else if (winnerPoint === "40" && loserPoint !== "40" && loserPoint !== "AD") {
+    } else if (
+      winnerPoint === "40" &&
+      loserPoint !== "40" &&
+      loserPoint !== "AD"
+    ) {
       gameWon = true;
     } else if (winnerPoint === "40" && loserPoint === "40") {
       if (ganador === "A") gameA = "AD";
@@ -542,11 +552,24 @@ export default function AdminScorePage() {
       b: String(nextSetB),
     };
 
+    let nextSets = sets;
+    const setFinished = isSetCompletePadel(sets[activeSetIndex]);
     const won = countSetsWon(sets);
+
+    if (
+      setFinished &&
+      activeSetIndex === 1 &&
+      won.a === 1 &&
+      won.b === 1 &&
+      sets.length < 3
+    ) {
+      nextSets = [...sets, { a: "0", b: "0" }];
+    }
+
     const nextServing = serving === "A" ? "B" : "A";
 
     updateMatch(partido.id, {
-      sets,
+      sets: nextSets,
       game_a: "0",
       game_b: "0",
       serving: nextServing,
@@ -662,11 +685,7 @@ export default function AdminScorePage() {
 
           {pinError && <p className="mt-3 text-sm text-red-300">{pinError}</p>}
 
-          <button
-            onClick={entrarConPin}
-            className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
-            style={{ backgroundColor: ACCENT }}
-          >
+          <button onClick={entrarConPin} className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black" style={{ backgroundColor: ACCENT }}>
             Entrar
           </button>
         </div>
@@ -867,36 +886,22 @@ export default function AdminScorePage() {
                 {(partidoActivo.sport || clubActual.sport) === "pickleball" ? (
                   <PickleballControls partido={partidoActivo} onPoint={puntoPickleball} onSaveSet={guardarSetPickleball} />
                 ) : (
-                  <PadelControls partido={partidoActivo} onPoint={puntoPadel} onChangeServe={cambiarSaque} />
+                  <PadelControls
+                    partido={partidoActivo}
+                    onPoint={puntoPadel}
+                    onChangeServe={cambiarSaque}
+                    onChangeMode={cambiarFormatoTercerSet}
+                  />
                 )}
 
                 <ControlSection title="Sets">
-                  {(partidoActivo.sport || clubActual.sport) !== "pickleball" && (
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => agregarSet(partidoActivo)}
-                        disabled={partidoActivo.sets.length >= 3}
-                        className="rounded-full border px-4 py-2 text-sm disabled:opacity-30"
-                        style={{ borderColor: ACCENT, color: ACCENT }}
-                      >
-                        + Agregar set
-                      </button>
-
-                      <button
-                        onClick={() => quitarSet(partidoActivo)}
-                        disabled={partidoActivo.sets.length <= 1}
-                        className="rounded-full border border-white/15 px-4 py-2 text-sm text-zinc-300 disabled:opacity-30"
-                      >
-                        Quitar set
-                      </button>
-                    </div>
-                  )}
-
                   <div className="space-y-3">
                     {partidoActivo.sets.map((set, index) => (
                       <div key={index} className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[110px_1fr_1fr]">
                         <div className="flex items-center text-sm text-zinc-400">
-                          Set {index + 1}
+                          {index === 2 && partidoActivo.third_set_mode === "Super tiebreak"
+                            ? "ST"
+                            : `Set ${index + 1}`}
                         </div>
 
                         <input
@@ -927,20 +932,23 @@ function PadelControls({
   partido,
   onPoint,
   onChangeServe,
+  onChangeMode,
 }: {
   partido: Partido;
   onPoint: (partido: Partido, ganador: "A" | "B") => void;
   onChangeServe: (partido: Partido) => void;
+  onChangeMode: (partido: Partido, mode: ModoTercerSet) => void;
 }) {
   const activeIndex = getActiveSetIndex(partido);
-  const set = partido.sets[activeIndex];
+  const set = partido.sets[activeIndex] || { a: "0", b: "0" };
   const isSuperTie =
     activeIndex === 2 && partido.third_set_mode === "Super tiebreak";
-  const isTieBreak = isSuperTie || (toNumber(set?.a) === 6 && toNumber(set?.b) === 6);
+  const isTieBreak =
+    isSuperTie || (toNumber(set.a) === 6 && toNumber(set.b) === 6);
 
   return (
     <>
-      <ControlSection title={isSuperTie ? "Super tie-break a 10" : isTieBreak ? "Tie-break a 7" : "Score del game"}>
+      <ControlSection title={isSuperTie ? "Super tiebreak a 10" : isTieBreak ? "Tiebreak a 7" : "Score del game"}>
         <div className="grid gap-4 md:grid-cols-2">
           <button
             onClick={() => onPoint(partido, "A")}
@@ -981,35 +989,26 @@ function PadelControls({
         </button>
       </ControlSection>
 
-      <ControlSection title="Formato del tercer set">
-        <div className="grid gap-3 md:grid-cols-2">
-          {(["Tercer set completo", "Super tiebreak"] as ModoTercerSet[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => updatePadelMode(partido, mode)}
-              className={`rounded-2xl px-5 py-4 font-bold ${
-                partido.third_set_mode === mode ? "text-black" : "bg-white/10 text-white"
-              }`}
-              style={partido.third_set_mode === mode ? { backgroundColor: ACCENT } : undefined}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-      </ControlSection>
+      {partido.sets.length >= 3 && (
+        <ControlSection title="Formato del tercer set">
+          <div className="grid gap-3 md:grid-cols-2">
+            {(["Tercer set completo", "Super tiebreak"] as ModoTercerSet[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onChangeMode(partido, mode)}
+                className={`rounded-2xl px-5 py-4 font-bold ${
+                  partido.third_set_mode === mode ? "text-black" : "bg-white/10 text-white"
+                }`}
+                style={partido.third_set_mode === mode ? { backgroundColor: ACCENT } : undefined}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </ControlSection>
+      )}
     </>
   );
-
-  function updatePadelMode(partido: Partido, mode: ModoTercerSet) {
-    supabase
-      .from("live_matches")
-      .update({
-        third_set_mode: mode,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", partido.id)
-      .then(() => window.location.reload());
-  }
 }
 
 function PickleballControls({
@@ -1024,11 +1023,19 @@ function PickleballControls({
   return (
     <ControlSection title="Score Pickleball">
       <div className="grid gap-4 md:grid-cols-2">
-        <button onClick={() => onPoint(partido, "A")} className="rounded-2xl px-5 py-5 font-black text-black" style={{ backgroundColor: ACCENT }}>
+        <button
+          onClick={() => onPoint(partido, "A")}
+          className="rounded-2xl px-5 py-5 font-black text-black"
+          style={{ backgroundColor: ACCENT }}
+        >
           + Punto {partido.team_a}
         </button>
 
-        <button onClick={() => onPoint(partido, "B")} className="rounded-2xl px-5 py-5 font-black text-black" style={{ backgroundColor: ACCENT }}>
+        <button
+          onClick={() => onPoint(partido, "B")}
+          className="rounded-2xl px-5 py-5 font-black text-black"
+          style={{ backgroundColor: ACCENT }}
+        >
           + Punto {partido.team_b}
         </button>
       </div>
@@ -1048,62 +1055,134 @@ function PickleballControls({
         </p>
       </div>
 
-      <button onClick={() => onSaveSet(partido)} className="mt-4 w-full rounded-2xl border border-white/10 px-5 py-4 font-bold text-white">
+      <button
+        onClick={() => onSaveSet(partido)}
+        className="mt-4 w-full rounded-2xl border border-white/10 px-5 py-4 font-bold text-white"
+      >
         Guardar set ganado
       </button>
     </ControlSection>
   );
 }
 
-function ScorePreview({ partido, compact = false }: { partido: Partido; compact?: boolean }) {
-  const sport = partido.sport || "padel";
+function ScorePreview({
+  partido,
+  compact = false,
+}: {
+  partido: Partido;
+  compact?: boolean;
+}) {
   const showSet3 = Boolean(partido.sets[2]);
   const activeSetIndex = getActiveSetIndex(partido);
-  const tercerSetLabel =
-    sport === "pickleball"
-      ? "S3"
-      : partido.third_set_mode === "Super tiebreak"
-      ? "ST"
-      : "S3";
-
-  const activeSetLabel = activeSetIndex === 0 ? "S1" : activeSetIndex === 1 ? "S2" : tercerSetLabel;
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl">
-      <div className={`grid gap-2 border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.2em] text-zinc-500 ${showSet3 ? "grid-cols-[1fr_44px_44px_44px_64px]" : "grid-cols-[1fr_44px_44px_64px]"}`}>
+      <div
+        className={`grid gap-2 border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.2em] text-zinc-500 ${
+          showSet3
+            ? "grid-cols-[1fr_44px_44px_44px]"
+            : "grid-cols-[1fr_44px_44px]"
+        }`}
+      >
         <div>Equipo</div>
-        <div className="text-center" style={activeSetIndex === 0 ? { color: ACCENT } : undefined}>S1</div>
-        <div className="text-center" style={activeSetIndex === 1 ? { color: ACCENT } : undefined}>S2</div>
-        {showSet3 && <div className="text-center" style={activeSetIndex === 2 ? { color: ACCENT } : undefined}>{tercerSetLabel}</div>}
-        <div className="text-center" style={{ color: ACCENT }}>{activeSetLabel}</div>
+
+        {partido.sets.map((_, index) => (
+          <div
+            key={index}
+            className="text-center"
+            style={activeSetIndex === index ? { color: ACCENT } : undefined}
+          >
+            {getActiveHeaderLabel(partido, index)}
+          </div>
+        ))}
       </div>
 
       <div className={compact ? "space-y-2 p-3" : "space-y-3 p-4"}>
-        <FilaScore name={partido.team_a} serving={partido.serving === "A"} sets={partido.sets.map((s) => s.a)} game={partido.game_a} showSet3={showSet3} compact={compact} activeSetIndex={activeSetIndex} />
-        <FilaScore name={partido.team_b} serving={partido.serving === "B"} sets={partido.sets.map((s) => s.b)} game={partido.game_b} showSet3={showSet3} compact={compact} activeSetIndex={activeSetIndex} />
+        <FilaScore
+          name={partido.team_a}
+          serving={partido.serving === "A"}
+          sets={partido.sets.map((s) => s.a)}
+          liveGame={partido.game_a}
+          compact={compact}
+          activeSetIndex={activeSetIndex}
+        />
+
+        <FilaScore
+          name={partido.team_b}
+          serving={partido.serving === "B"}
+          sets={partido.sets.map((s) => s.b)}
+          liveGame={partido.game_b}
+          compact={compact}
+          activeSetIndex={activeSetIndex}
+        />
       </div>
     </div>
   );
 }
 
-function FilaScore({ name, serving, sets, game, showSet3, compact, activeSetIndex }: { name: string; serving: boolean; sets: string[]; game: string; showSet3: boolean; compact?: boolean; activeSetIndex: number }) {
+function FilaScore({
+  name,
+  serving,
+  sets,
+  liveGame,
+  compact,
+  activeSetIndex,
+}: {
+  name: string;
+  serving: boolean;
+  sets: string[];
+  liveGame: string;
+  compact?: boolean;
+  activeSetIndex: number;
+}) {
+  function displaySet(index: number) {
+    if (index === activeSetIndex) {
+      return liveGame || sets[index] || "0";
+    }
+
+    return sets[index] ?? "0";
+  }
+
   return (
-    <div className={`grid items-center gap-2 rounded-3xl bg-black/40 ${showSet3 ? "grid-cols-[1fr_44px_44px_44px_64px]" : "grid-cols-[1fr_44px_44px_64px]"} ${compact ? "px-3 py-3 text-sm" : "px-4 py-5 text-base md:text-xl"}`}>
+    <div
+      className={`grid items-center gap-2 rounded-3xl bg-black/40 ${
+        sets.length >= 3
+          ? "grid-cols-[1fr_44px_44px_44px]"
+          : "grid-cols-[1fr_44px_44px]"
+      } ${compact ? "px-3 py-3 text-sm" : "px-4 py-5 text-base md:text-xl"}`}
+    >
       <div className="flex min-w-0 items-center gap-3 font-black">
-        <span className="shrink-0 rounded-full" style={{ backgroundColor: serving ? ACCENT : "transparent", height: compact ? 10 : 14, width: compact ? 10 : 14 }} />
+        <span
+          className="shrink-0 rounded-full"
+          style={{
+            backgroundColor: serving ? ACCENT : "transparent",
+            height: compact ? 10 : 14,
+            width: compact ? 10 : 14,
+          }}
+        />
         <span className="truncate">{name}</span>
       </div>
 
-      <div className="text-center font-black" style={activeSetIndex === 0 ? { color: ACCENT } : undefined}>{sets[0] ?? "0"}</div>
-      <div className="text-center font-black" style={activeSetIndex === 1 ? { color: ACCENT } : undefined}>{sets[1] ?? "0"}</div>
-      {showSet3 && <div className="text-center font-black" style={activeSetIndex === 2 ? { color: ACCENT } : undefined}>{sets[2] ?? "0"}</div>}
-
-      <div className="text-center text-xl font-black md:text-2xl" style={{ color: ACCENT }}>{game}</div>
+      {sets.map((_, index) => (
+        <div
+          key={index}
+          className="text-center font-black"
+          style={activeSetIndex === index ? { color: ACCENT } : undefined}
+        >
+          {displaySet(index)}
+        </div>
+      ))}
     </div>
   );
 }
 
-function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ControlSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-8">
       <p className="mb-3 font-bold">{title}</p>
@@ -1112,11 +1191,23 @@ function ControlSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Input({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <label className="grid gap-2">
       <span className="text-sm text-zinc-400">{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="rounded-2xl border border-white/10 bg-white/10 p-4 outline-none focus:border-green-400" />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl border border-white/10 bg-white/10 p-4 outline-none focus:border-green-400"
+      />
     </label>
   );
 }
@@ -1129,7 +1220,14 @@ function EstadoBadge({ status }: { status: EstadoPartido }) {
   };
 
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`} style={status === "En juego" ? { backgroundColor: ACCENT, borderColor: ACCENT } : undefined}>
+    <span
+      className={`rounded-full border px-3 py-1 text-xs font-bold ${styles[status]}`}
+      style={
+        status === "En juego"
+          ? { backgroundColor: ACCENT, borderColor: ACCENT }
+          : undefined
+      }
+    >
       {status}
     </span>
   );
