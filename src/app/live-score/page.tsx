@@ -6,11 +6,34 @@ import { supabase } from "@/lib/supabaseClient";
 
 const ACCENT = "#3FCD31";
 
-type Club = {
-  id: string;
+type Sport = "padel" | "pickleball";
+
+type ScoreClub = {
   name: string;
-  logo_url?: string | null;
+  sport: Sport;
+  logo_url: string;
 };
+
+const SCORE_CLUBS: ScoreClub[] = [
+  {
+    name: "Garana Padel",
+    sport: "padel",
+    logo_url:
+      "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Garana.PNG",
+  },
+  {
+    name: "Upadel",
+    sport: "padel",
+    logo_url:
+      "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
+  },
+  {
+    name: "Pickle Tour Venezuela",
+    sport: "pickleball",
+    logo_url:
+      "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/PickleTour.jpeg",
+  },
+];
 
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
 type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
@@ -18,8 +41,10 @@ type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
 type Partido = {
   id: string;
   club: string;
+  sport?: Sport;
   cancha: string;
   tournament: string;
+  category?: string;
   round: string;
   match_time: string;
   team_a: string;
@@ -30,14 +55,68 @@ type Partido = {
   game_a: string;
   game_b: string;
   serving: "A" | "B";
+  server_number?: number;
 };
 
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
 
-export default function LiveScorePage() {
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [clubSeleccionado, setClubSeleccionado] = useState<Club | null>(null);
+function toNumber(value: string | undefined) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n : 0;
+}
 
+function isSetCompletePadel(set: { a: string; b: string }) {
+  const a = toNumber(set.a);
+  const b = toNumber(set.b);
+
+  if ((a === 7 && b === 6) || (a === 6 && b === 7)) return true;
+  if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2) return true;
+
+  return false;
+}
+
+function isSetCompletePickleball(set: { a: string; b: string }) {
+  const a = toNumber(set.a);
+  const b = toNumber(set.b);
+
+  return (a >= 11 || b >= 11) && Math.abs(a - b) >= 2;
+}
+
+function getActiveSetIndex(partido: Partido) {
+  const sport = partido.sport || "padel";
+
+  const index = partido.sets.findIndex((set) =>
+    sport === "pickleball"
+      ? !isSetCompletePickleball(set)
+      : !isSetCompletePadel(set)
+  );
+
+  if (index === -1) return partido.sets.length - 1;
+  return index;
+}
+
+function getActiveHeaderLabel(partido: Partido, index: number) {
+  const sport = partido.sport || "padel";
+  const activeIndex = getActiveSetIndex(partido);
+
+  if (index !== activeIndex) return `S${index + 1}`;
+
+  const set = partido.sets[index];
+  const a = toNumber(set?.a);
+  const b = toNumber(set?.b);
+
+  if (sport === "pickleball") return `S${index + 1}`;
+
+  if (index === 2 && partido.third_set_mode === "Super tiebreak") return "ST";
+  if (a === 6 && b === 6) return "TB";
+
+  return "GAME";
+}
+
+export default function LiveScorePage() {
+  const [clubSeleccionado, setClubSeleccionado] = useState<ScoreClub | null>(
+    null
+  );
   const [canchaSeleccionada, setCanchaSeleccionada] = useState("Cancha 1");
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,7 +127,8 @@ export default function LiveScorePage() {
       partidos.filter(
         (partido) =>
           !clubSeleccionado ||
-          String(partido.club || "").trim() === String(clubSeleccionado.name).trim()
+          String(partido.club || "").trim() ===
+            String(clubSeleccionado.name).trim()
       ),
     [partidos, clubSeleccionado]
   );
@@ -57,13 +137,13 @@ export default function LiveScorePage() {
     () =>
       partidosClub.filter(
         (partido) =>
-          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+          String(partido.cancha || "").trim() ===
+          String(canchaSeleccionada).trim()
       ),
     [partidosClub, canchaSeleccionada]
   );
 
   useEffect(() => {
-    cargarClubes();
     cargarPartidos();
 
     const channel = supabase
@@ -79,17 +159,6 @@ export default function LiveScorePage() {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  async function cargarClubes() {
-    const { data, error } = await supabase
-      .from("clubs")
-      .select("id,name,logo_url")
-      .order("name");
-
-    if (!error) {
-      setClubs((data || []) as Club[]);
-    }
-  }
 
   async function cargarPartidos() {
     setCargando(true);
@@ -126,7 +195,9 @@ export default function LiveScorePage() {
                 {clubSeleccionado?.name || "Recap"}
               </p>
 
-              <h1 className="text-2xl font-black text-black">Score en Vivo</h1>
+              <h1 className="text-2xl font-black text-black">
+                Score en Vivo
+              </h1>
             </div>
           </div>
 
@@ -138,14 +209,21 @@ export default function LiveScorePage() {
         {menuOpen && (
           <div className="mt-4 border-t border-zinc-200 pt-4">
             <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3">
-              <Link className="rounded-2xl bg-zinc-100 p-4 font-bold text-black" href="/">
+              <Link
+                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+                href="/"
+              >
                 Clips
               </Link>
 
               <Link
                 className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
                 href="/live-score"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                onClick={() => {
+                  setClubSeleccionado(null);
+                  setMenuOpen(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
                 Score en Vivo
               </Link>
@@ -171,9 +249,9 @@ export default function LiveScorePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {clubs.map((club) => (
+            {SCORE_CLUBS.map((club) => (
               <button
-                key={club.id}
+                key={club.name}
                 onClick={() => {
                   setClubSeleccionado(club);
                   setCanchaSeleccionada("Cancha 1");
@@ -181,21 +259,19 @@ export default function LiveScorePage() {
                 className="rounded-[2rem] border border-white/10 bg-white/[0.07] p-6 text-left transition hover:border-white/30 hover:bg-white/[0.1]"
               >
                 <div className="flex items-center gap-4">
-                  {club.logo_url ? (
-                    <img
-                      src={club.logo_url}
-                      alt={`${club.name} logo`}
-                      className="h-14 w-14 rounded-full object-cover ring-1 ring-white/10"
-                    />
-                  ) : (
-                    <div className="grid h-14 w-14 place-items-center rounded-full bg-white/10 font-black">
-                      {club.name[0]}
-                    </div>
-                  )}
+                  <img
+                    src={club.logo_url}
+                    alt={club.name}
+                    className="h-14 w-14 rounded-full object-cover ring-1 ring-white/10"
+                  />
 
                   <div>
                     <p className="text-2xl font-black">{club.name}</p>
-                    <p className="mt-1 text-sm text-zinc-400">Ver score en vivo</p>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {club.sport === "pickleball"
+                        ? "Pickleball Score"
+                        : "Padel Score"}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -213,14 +289,22 @@ export default function LiveScorePage() {
             ← Cambiar club
           </button>
 
-          <div className="mb-6">
-            <h2 className="text-4xl font-black md:text-6xl">
-              {clubSeleccionado.name}
-            </h2>
+          <div className="mb-6 flex items-center gap-4">
+            <img
+              src={clubSeleccionado.logo_url}
+              alt={clubSeleccionado.name}
+              className="h-16 w-16 rounded-full object-cover"
+            />
 
-            <p className="mt-2 text-zinc-400">
-              Selecciona la cancha y sigue el score en vivo de los partidos.
-            </p>
+            <div>
+              <h2 className="text-4xl font-black md:text-6xl">
+                {clubSeleccionado.name}
+              </h2>
+
+              <p className="mt-2 text-zinc-400">
+                Selecciona la cancha y sigue el score en vivo de los partidos.
+              </p>
+            </div>
           </div>
 
           <div className="mb-8 rounded-[2rem] border border-white/10 bg-white/[0.07] p-4">
@@ -230,13 +314,14 @@ export default function LiveScorePage() {
               {CANCHAS.map((cancha) => {
                 const total = partidosClub.filter(
                   (partido) =>
-                    String(partido.cancha || "").trim() === String(cancha).trim()
+                    String(partido.cancha || "").trim() ===
+                    String(cancha).trim()
                 ).length;
 
                 const enVivo = partidosClub.filter(
                   (partido) =>
-                    String(partido.cancha || "").trim() === String(cancha).trim() &&
-                    partido.status === "En juego"
+                    String(partido.cancha || "").trim() ===
+                      String(cancha).trim() && partido.status === "En juego"
                 ).length;
 
                 return (
@@ -325,6 +410,7 @@ export default function LiveScorePage() {
                     </h4>
 
                     <p className="text-zinc-400">
+                      {partido.category ? `${partido.category} · ` : ""}
                       {partido.round} · {partido.match_time}
                     </p>
                   </div>
@@ -358,24 +444,28 @@ export default function LiveScorePage() {
 }
 
 function LiveScoreCard({ partido }: { partido: Partido }) {
-  const showSet3 = Boolean(partido.sets[2]);
-  const tercerSetLabel =
-    partido.third_set_mode === "Super tiebreak" ? "TB" : "S3";
+  const activeSetIndex = getActiveSetIndex(partido);
 
   return (
     <div>
       <div
         className={`grid gap-2 border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.2em] text-zinc-500 ${
-          showSet3
-            ? "grid-cols-[1fr_44px_44px_44px_56px]"
-            : "grid-cols-[1fr_44px_44px_56px]"
+          partido.sets.length >= 3
+            ? "grid-cols-[1fr_44px_44px_44px]"
+            : "grid-cols-[1fr_44px_44px]"
         }`}
       >
         <div>Equipo</div>
-        <div className="text-center">S1</div>
-        <div className="text-center">S2</div>
-        {showSet3 && <div className="text-center">{tercerSetLabel}</div>}
-        <div className="text-center">Game</div>
+
+        {partido.sets.map((_, index) => (
+          <div
+            key={index}
+            className="text-center"
+            style={activeSetIndex === index ? { color: ACCENT } : undefined}
+          >
+            {getActiveHeaderLabel(partido, index)}
+          </div>
+        ))}
       </div>
 
       <div className="space-y-3 p-4">
@@ -383,18 +473,37 @@ function LiveScoreCard({ partido }: { partido: Partido }) {
           name={partido.team_a}
           serving={partido.serving === "A"}
           sets={partido.sets.map((s) => s.a)}
-          game={partido.game_a}
-          showSet3={showSet3}
+          liveGame={partido.game_a}
+          activeSetIndex={activeSetIndex}
         />
 
         <ScoreRow
           name={partido.team_b}
           serving={partido.serving === "B"}
           sets={partido.sets.map((s) => s.b)}
-          game={partido.game_b}
-          showSet3={showSet3}
+          liveGame={partido.game_b}
+          activeSetIndex={activeSetIndex}
         />
       </div>
+
+      {(partido.sport || "padel") === "pickleball" && (
+        <div className="border-t border-white/10 px-5 pb-5 text-sm text-zinc-400">
+          Sacando:{" "}
+          <span className="font-bold text-white">
+            {partido.serving === "A" ? partido.team_a : partido.team_b}
+          </span>{" "}
+          · Servidor {partido.server_number || 1}
+        </div>
+      )}
+
+      {(partido.sport || "padel") === "padel" && (
+        <div className="border-t border-white/10 px-5 pb-5 text-sm text-zinc-400">
+          Sacando:{" "}
+          <span className="font-bold text-white">
+            {partido.serving === "A" ? partido.team_a : partido.team_b}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -403,21 +512,29 @@ function ScoreRow({
   name,
   serving,
   sets,
-  game,
-  showSet3,
+  liveGame,
+  activeSetIndex,
 }: {
   name: string;
   serving: boolean;
   sets: string[];
-  game: string;
-  showSet3: boolean;
+  liveGame: string;
+  activeSetIndex: number;
 }) {
+  function displaySet(index: number) {
+    if (index === activeSetIndex) {
+      return liveGame || sets[index] || "0";
+    }
+
+    return sets[index] ?? "0";
+  }
+
   return (
     <div
       className={`grid items-center gap-2 rounded-3xl bg-black/40 px-4 py-5 text-base md:text-xl ${
-        showSet3
-          ? "grid-cols-[1fr_44px_44px_44px_56px]"
-          : "grid-cols-[1fr_44px_44px_56px]"
+        sets.length >= 3
+          ? "grid-cols-[1fr_44px_44px_44px]"
+          : "grid-cols-[1fr_44px_44px]"
       }`}
     >
       <div className="flex min-w-0 items-center gap-3 font-black">
@@ -428,19 +545,15 @@ function ScoreRow({
         <span className="truncate">{name}</span>
       </div>
 
-      <div className="text-center font-black">{sets[0] ?? "0"}</div>
-      <div className="text-center font-black">{sets[1] ?? "0"}</div>
-
-      {showSet3 && (
-        <div className="text-center font-black">{sets[2] ?? "0"}</div>
-      )}
-
-      <div
-        className="text-center text-xl font-black md:text-2xl"
-        style={{ color: ACCENT }}
-      >
-        {game}
-      </div>
+      {sets.map((_, index) => (
+        <div
+          key={index}
+          className="text-center font-black"
+          style={activeSetIndex === index ? { color: ACCENT } : undefined}
+        >
+          {displaySet(index)}
+        </div>
+      ))}
     </div>
   );
 }
