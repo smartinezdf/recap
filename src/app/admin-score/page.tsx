@@ -41,6 +41,7 @@ type Partido = {
   sport?: Sport;
   cancha: string;
   tournament: string;
+  category?: string;
   round: string;
   match_time: string;
   team_a: string;
@@ -63,6 +64,7 @@ function formularioVacio(cancha = "Cancha 1") {
     sport: "padel" as Sport,
     cancha,
     tournament: "",
+    category: "",
     round: "",
     match_time: "",
     team_a: "",
@@ -101,12 +103,15 @@ export default function AdminScorePage() {
     () =>
       partidos.filter(
         (partido) =>
-          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+          String(partido.cancha || "").trim() ===
+          String(canchaSeleccionada).trim()
       ),
     [partidos, canchaSeleccionada]
   );
 
-  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
+  const partidoActivo = partidos.find(
+    (partido) => partido.id === partidoActivoId
+  );
 
   useEffect(() => {
     if (clubActual) cargarPartidos();
@@ -176,6 +181,7 @@ export default function AdminScorePage() {
   function validarFormulario() {
     const requeridos = [
       form.tournament,
+      form.category,
       form.round,
       form.match_time,
       form.team_a,
@@ -184,7 +190,7 @@ export default function AdminScorePage() {
 
     if (requeridos.some((campo) => !campo.trim())) {
       setErrorFormulario(
-        "Completa torneo, ronda, hora, Equipo A y Equipo B antes de guardar."
+        "Completa torneo, categoría, ronda, hora, Equipo A y Equipo B antes de guardar."
       );
       return false;
     }
@@ -204,6 +210,7 @@ export default function AdminScorePage() {
           sport: clubActual.sport,
           cancha: canchaSeleccionada,
           tournament: form.tournament,
+          category: form.category,
           round: form.round,
           match_time: form.match_time,
           team_a: form.team_a,
@@ -244,6 +251,7 @@ export default function AdminScorePage() {
         sport: clubActual.sport,
         cancha: canchaSeleccionada,
         tournament: form.tournament,
+        category: form.category,
         round: form.round,
         match_time: form.match_time,
         team_a: form.team_a,
@@ -278,6 +286,7 @@ export default function AdminScorePage() {
       sport: partido.sport || clubActual?.sport || "padel",
       cancha: partido.cancha,
       tournament: partido.tournament,
+      category: partido.category || "",
       round: partido.round,
       match_time: partido.match_time,
       team_a: partido.team_a,
@@ -409,11 +418,13 @@ export default function AdminScorePage() {
       return;
     }
 
-    const sets = partido.sets?.length ? [...partido.sets] : [
-      { a: "0", b: "0" },
-      { a: "0", b: "0" },
-      { a: "0", b: "0" },
-    ];
+    const sets = partido.sets?.length
+      ? [...partido.sets]
+      : [
+          { a: "0", b: "0" },
+          { a: "0", b: "0" },
+          { a: "0", b: "0" },
+        ];
 
     const indexSet = sets.findIndex((s) => s.a === "0" && s.b === "0");
 
@@ -587,6 +598,7 @@ export default function AdminScorePage() {
 
             <div className="grid gap-4">
               <Input label="Torneo / Evento" value={form.tournament} onChange={(v) => actualizarForm("tournament", v)} />
+              <Input label="Categoría" value={form.category || ""} onChange={(v) => actualizarForm("category", v)} />
               <Input label="Ronda" value={form.round} onChange={(v) => actualizarForm("round", v)} />
               <Input label="Hora" value={form.match_time} onChange={(v) => actualizarForm("match_time", v)} />
               <Input label="Equipo A" value={form.team_a} onChange={(v) => actualizarForm("team_a", v)} />
@@ -659,11 +671,16 @@ export default function AdminScorePage() {
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
                         <p style={{ color: ACCENT }} className="text-sm">
-                          {partido.tournament} · {partido.match_time}
+                          {partido.tournament}
+                          {partido.category ? ` · ${partido.category}` : ""}
+                          {" · "}
+                          {partido.match_time}
                         </p>
+
                         <h3 className="text-xl font-black">
                           {partido.team_a} vs {partido.team_b}
                         </h3>
+
                         <p className="text-sm text-zinc-400">{partido.round}</p>
                       </div>
 
@@ -703,11 +720,14 @@ export default function AdminScorePage() {
                     >
                       Editando score
                     </p>
+
                     <h2 className="text-2xl font-black">
                       {partidoActivo.team_a} vs {partidoActivo.team_b}
                     </h2>
+
                     <p className="text-zinc-400">
                       {partidoActivo.cancha} ·{" "}
+                      {partidoActivo.category ? `${partidoActivo.category} · ` : ""}
                       {(partidoActivo.sport || clubActual.sport) === "pickleball"
                         ? "Pickleball"
                         : "Padel"}
@@ -754,7 +774,9 @@ export default function AdminScorePage() {
                               <button
                                 key={mode}
                                 onClick={() =>
-                                  actualizarPartido(partidoActivo.id, { third_set_mode: mode })
+                                  actualizarPartido(partidoActivo.id, {
+                                    third_set_mode: mode,
+                                  })
                                 }
                                 className={`rounded-2xl px-5 py-4 font-bold ${
                                   partidoActivo.third_set_mode === mode
@@ -798,7 +820,9 @@ export default function AdminScorePage() {
                   <ControlSection title="Equipo que saca">
                     <div className="grid gap-3 md:grid-cols-2">
                       <button
-                        onClick={() => actualizarPartido(partidoActivo.id, { serving: "A" })}
+                        onClick={() =>
+                          actualizarPartido(partidoActivo.id, { serving: "A" })
+                        }
                         className={`rounded-2xl px-5 py-4 font-bold ${
                           partidoActivo.serving === "A"
                             ? "text-black"
@@ -813,7 +837,9 @@ export default function AdminScorePage() {
                         ● {partidoActivo.team_a}
                       </button>
                       <button
-                        onClick={() => actualizarPartido(partidoActivo.id, { serving: "B" })}
+                        onClick={() =>
+                          actualizarPartido(partidoActivo.id, { serving: "B" })
+                        }
                         className={`rounded-2xl px-5 py-4 font-bold ${
                           partidoActivo.serving === "B"
                             ? "text-black"
@@ -865,7 +891,12 @@ export default function AdminScorePage() {
                           <input
                             value={set.a}
                             onChange={(e) =>
-                              actualizarSet(partidoActivo, index, "a", e.target.value)
+                              actualizarSet(
+                                partidoActivo,
+                                index,
+                                "a",
+                                e.target.value
+                              )
                             }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
@@ -873,7 +904,12 @@ export default function AdminScorePage() {
                           <input
                             value={set.b}
                             onChange={(e) =>
-                              actualizarSet(partidoActivo, index, "b", e.target.value)
+                              actualizarSet(
+                                partidoActivo,
+                                index,
+                                "b",
+                                e.target.value
+                              )
                             }
                             className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                           />
@@ -955,6 +991,7 @@ function ScorePreview({
   const showSet3 = Boolean(partido.sets[2]);
   const tercerSetLabel =
     partido.third_set_mode === "Super tiebreak" ? "TB" : "S3";
+  const scoreLabel = partido.sport === "pickleball" ? "Puntos" : "Game";
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0f0c] shadow-2xl">
@@ -969,7 +1006,7 @@ function ScorePreview({
         <div className="text-center">S1</div>
         <div className="text-center">S2</div>
         {showSet3 && <div className="text-center">{tercerSetLabel}</div>}
-        <div className="text-center">Game</div>
+        <div className="text-center">{scoreLabel}</div>
       </div>
 
       <div className={compact ? "space-y-2 p-3" : "space-y-3 p-4"}>
