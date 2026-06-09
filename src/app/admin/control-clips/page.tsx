@@ -14,7 +14,7 @@ const statusText: Record<string, string> = {
   uploaded: "Clip subido",
   buffer_error: "Error de buffer",
   upload_error: "No se pudo subir el clip",
-  wifi_error: "Posible problema de internet/WiFi",
+  wifi_error: "Posible problema de internet",
   failed: "Error general",
 };
 
@@ -43,23 +43,37 @@ function formatVenezuelaTime(date: string) {
 
 export default function ControlClipsPage() {
   const [events, setEvents] = useState<any[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(true);
 
   async function loadEvents() {
-    const { data, error } = await supabase
-      .from("clip_events")
-      .select("*")
-      .eq("club", "Garana")
-      .order("created_at", { ascending: false })
-      .limit(30);
+    try {
+      const { data, error } = await supabase
+        .from("clip_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    if (!error) setEvents(data || []);
+      if (error) {
+        console.error(error);
+        setErrorMsg(error.message);
+        return;
+      }
+
+      setEvents(data || []);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Error desconocido");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     loadEvents();
 
     const channel = supabase
-      .channel("clip-events-realtime")
+      .channel("clip-events")
       .on(
         "postgres_changes",
         {
@@ -68,10 +82,13 @@ export default function ControlClipsPage() {
           table: "clip_events",
         },
         () => {
+          console.log("Cambio detectado");
           loadEvents();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -79,22 +96,62 @@ export default function ControlClipsPage() {
   }, []);
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+    <main
+      style={{
+        maxWidth: 1000,
+        margin: "0 auto",
+        padding: 24,
+      }}
+    >
       <h1>Control de Clips</h1>
+
       <p>Estado en tiempo real de botones y clips.</p>
+
+      <hr />
+
+      <p>
+        <b>Eventos encontrados:</b> {events.length}
+      </p>
+
+      {loading && <p>Cargando...</p>}
+
+      {errorMsg && (
+        <div
+          style={{
+            background: "#ffe5e5",
+            padding: 12,
+            borderRadius: 8,
+            marginTop: 12,
+          }}
+        >
+          <b>Error:</b> {errorMsg}
+        </div>
+      )}
+
+      {!loading && !errorMsg && events.length === 0 && (
+        <div
+          style={{
+            background: "#f5f5f5",
+            padding: 12,
+            borderRadius: 8,
+            marginTop: 12,
+          }}
+        >
+          No hay eventos en la tabla clip_events.
+        </div>
+      )}
 
       {events.map((event) => (
         <div
           key={event.id}
           style={{
             border: "1px solid #ddd",
-            borderRadius: 14,
+            borderRadius: 12,
             padding: 16,
-            marginTop: 14,
-            background: "#fff",
+            marginTop: 12,
           }}
         >
-          <h2 style={{ marginBottom: 8 }}>{event.court}</h2>
+          <h3>{event.court || "Cancha desconocida"}</h3>
 
           <p>
             <b>Estado:</b>{" "}
@@ -107,6 +164,12 @@ export default function ControlClipsPage() {
             {formatVenezuelaTime(event.created_at)}
           </p>
 
+          {event.device_name && (
+            <p>
+              <b>Dispositivo:</b> {event.device_name}
+            </p>
+          )}
+
           {event.error_message && (
             <p>
               <b>Error:</b> {event.error_message}
@@ -114,9 +177,15 @@ export default function ControlClipsPage() {
           )}
 
           {event.clip_url && (
-            <a href={event.clip_url} target="_blank">
-              Ver clip
-            </a>
+            <p>
+              <a
+                href={event.clip_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ver clip
+              </a>
+            </p>
           )}
         </div>
       ))}
