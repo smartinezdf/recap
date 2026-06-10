@@ -159,12 +159,15 @@ export default function AdminScorePage() {
     () =>
       partidos.filter(
         (partido) =>
-          String(partido.cancha || "").trim() === String(canchaSeleccionada).trim()
+          String(partido.cancha || "").trim() ===
+          String(canchaSeleccionada).trim()
       ),
     [partidos, canchaSeleccionada]
   );
 
-  const partidoActivo = partidos.find((partido) => partido.id === partidoActivoId);
+  const partidoActivo = partidos.find(
+    (partido) => partido.id === partidoActivoId
+  );
 
   useEffect(() => {
     if (clubActual) cargarPartidos();
@@ -420,6 +423,37 @@ export default function AdminScorePage() {
     });
   }
 
+  function resetGame(partido: Partido) {
+    updateMatch(partido.id, {
+      game_a: "0",
+      game_b: "0",
+    });
+  }
+
+  function bajarPuntoPickleball(partido: Partido, lado: "A" | "B") {
+    const gameA = Math.max(
+      0,
+      Number(partido.game_a || 0) - (lado === "A" ? 1 : 0)
+    );
+    const gameB = Math.max(
+      0,
+      Number(partido.game_b || 0) - (lado === "B" ? 1 : 0)
+    );
+
+    updateMatch(partido.id, {
+      game_a: String(gameA),
+      game_b: String(gameB),
+    });
+  }
+
+  function resetPickleballScore(partido: Partido) {
+    updateMatch(partido.id, {
+      game_a: "0",
+      game_b: "0",
+      server_number: 1,
+    });
+  }
+
   function cambiarFormatoTercerSet(partido: Partido, mode: ModoTercerSet) {
     updateMatch(partido.id, {
       third_set_mode: mode,
@@ -432,6 +466,13 @@ export default function AdminScorePage() {
     const sets = partido.sets?.length ? [...partido.sets] : [{ a: "0", b: "0" }];
     const activeSetIndex = getActiveSetIndex(partido);
     const setActual = sets[activeSetIndex] || { a: "0", b: "0" };
+
+    if (isSetCompletePadel(setActual)) {
+      setErrorFormulario(
+        "Ese set ya está cerrado. Edita el set manualmente si hubo un error."
+      );
+      return;
+    }
 
     const setA = toNumber(setActual.a);
     const setB = toNumber(setActual.b);
@@ -524,10 +565,21 @@ export default function AdminScorePage() {
     const nextSetA = setA + (ganador === "A" ? 1 : 0);
     const nextSetB = setB + (ganador === "B" ? 1 : 0);
 
-    sets[activeSetIndex] = {
+    const nextSet = {
       a: String(nextSetA),
       b: String(nextSetB),
     };
+
+    if (
+      (nextSetA > 7 || nextSetB > 7) ||
+      (nextSetA === 7 && nextSetB < 5) ||
+      (nextSetB === 7 && nextSetA < 5)
+    ) {
+      setErrorFormulario("Score de set inválido. Revisa el marcador.");
+      return;
+    }
+
+    sets[activeSetIndex] = nextSet;
 
     let nextSets = sets;
     const setFinished = isSetCompletePadel(sets[activeSetIndex]);
@@ -590,7 +642,9 @@ export default function AdminScorePage() {
     const gameB = Number(partido.game_b || 0);
 
     if (!isSetCompletePickleball({ a: String(gameA), b: String(gameB) })) {
-      setErrorFormulario("Para cerrar el set, alguien debe llegar a 11 y ganar por 2.");
+      setErrorFormulario(
+        "Para cerrar el set, alguien debe llegar a 11 y ganar por 2."
+      );
       return;
     }
 
@@ -625,7 +679,10 @@ export default function AdminScorePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050806] px-5 text-white">
         <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.08] p-8 shadow-2xl">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.35em]" style={{ color: ACCENT }}>
+          <p
+            className="mb-2 text-xs font-bold uppercase tracking-[0.35em]"
+            style={{ color: ACCENT }}
+          >
             Recap Admin
           </p>
 
@@ -637,8 +694,15 @@ export default function AdminScorePage() {
 
           <div className="mb-6 grid gap-3">
             {Object.values(CLUB_PINS).map((club) => (
-              <div key={club.club} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3">
-                <img src={club.logo} alt={club.club} className="h-12 w-12 rounded-full object-cover" />
+              <div
+                key={club.club}
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3"
+              >
+                <img
+                  src={club.logo}
+                  alt={club.club}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
                 <div>
                   <p className="font-bold">{club.club}</p>
                   <p className="text-xs text-zinc-400">
@@ -662,7 +726,11 @@ export default function AdminScorePage() {
 
           {pinError && <p className="mt-3 text-sm text-red-300">{pinError}</p>}
 
-          <button onClick={entrarConPin} className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black" style={{ backgroundColor: ACCENT }}>
+          <button
+            onClick={entrarConPin}
+            className="mt-5 w-full rounded-2xl px-6 py-4 font-black text-black"
+            style={{ backgroundColor: ACCENT }}
+          >
             Entrar
           </button>
         </div>
@@ -675,16 +743,27 @@ export default function AdminScorePage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 px-5 py-4 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={clubActual.logo} alt={clubActual.club} className="h-10 w-10 rounded-full object-cover" />
+            <img
+              src={clubActual.logo}
+              alt={clubActual.club}
+              className="h-10 w-10 rounded-full object-cover"
+            />
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] font-bold" style={{ color: ACCENT }}>
+              <p
+                className="text-xs uppercase tracking-[0.35em] font-bold"
+                style={{ color: ACCENT }}
+              >
                 {clubActual.club}
               </p>
               <h1 className="text-2xl font-black">Control de Score</h1>
             </div>
           </div>
 
-          <Link href="/live-score" className="rounded-full px-5 py-3 text-sm font-bold text-black" style={{ backgroundColor: ACCENT }}>
+          <Link
+            href="/live-score"
+            className="rounded-full px-5 py-3 text-sm font-bold text-black"
+            style={{ backgroundColor: ACCENT }}
+          >
             Ver Score en Vivo
           </Link>
         </div>
@@ -692,11 +771,15 @@ export default function AdminScorePage() {
 
       <section className="mx-auto max-w-7xl px-5 py-6">
         <div className="mb-6 rounded-[2rem] border border-white/10 bg-white/[0.07] p-4">
-          <p className="mb-3 text-sm font-bold text-zinc-300">Selecciona la cancha</p>
+          <p className="mb-3 text-sm font-bold text-zinc-300">
+            Selecciona la cancha
+          </p>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {CANCHAS.map((cancha) => {
-              const total = partidos.filter((p) => String(p.cancha || "").trim() === cancha).length;
+              const total = partidos.filter(
+                (p) => String(p.cancha || "").trim() === cancha
+              ).length;
 
               return (
                 <button
@@ -707,7 +790,11 @@ export default function AdminScorePage() {
                       ? "text-black"
                       : "border-white/10 bg-black/30 text-white hover:border-white/40"
                   }`}
-                  style={canchaSeleccionada === cancha ? { backgroundColor: ACCENT, borderColor: ACCENT } : undefined}
+                  style={
+                    canchaSeleccionada === cancha
+                      ? { backgroundColor: ACCENT, borderColor: ACCENT }
+                      : undefined
+                  }
                 >
                   <p className="font-black">{cancha}</p>
                   <p className="text-sm opacity-70">{total} partidos hoy</p>
@@ -720,7 +807,10 @@ export default function AdminScorePage() {
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <aside className="h-fit rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl backdrop-blur-xl">
             <div className="mb-5">
-              <p className="text-sm uppercase tracking-[0.25em] font-bold" style={{ color: ACCENT }}>
+              <p
+                className="text-sm uppercase tracking-[0.25em] font-bold"
+                style={{ color: ACCENT }}
+              >
                 {canchaSeleccionada}
               </p>
               <h2 className="text-xl font-black">
@@ -729,12 +819,36 @@ export default function AdminScorePage() {
             </div>
 
             <div className="grid gap-4">
-              <Input label="Torneo / Evento" value={form.tournament} onChange={(v) => actualizarForm("tournament", v)} />
-              <Input label="Categoría" value={form.category || ""} onChange={(v) => actualizarForm("category", v)} />
-              <Input label="Ronda" value={form.round} onChange={(v) => actualizarForm("round", v)} />
-              <Input label="Hora" value={form.match_time} onChange={(v) => actualizarForm("match_time", v)} />
-              <Input label="Equipo A" value={form.team_a} onChange={(v) => actualizarForm("team_a", v)} />
-              <Input label="Equipo B" value={form.team_b} onChange={(v) => actualizarForm("team_b", v)} />
+              <Input
+                label="Torneo / Evento"
+                value={form.tournament}
+                onChange={(v) => actualizarForm("tournament", v)}
+              />
+              <Input
+                label="Categoría"
+                value={form.category || ""}
+                onChange={(v) => actualizarForm("category", v)}
+              />
+              <Input
+                label="Ronda"
+                value={form.round}
+                onChange={(v) => actualizarForm("round", v)}
+              />
+              <Input
+                label="Hora"
+                value={form.match_time}
+                onChange={(v) => actualizarForm("match_time", v)}
+              />
+              <Input
+                label="Equipo A"
+                value={form.team_a}
+                onChange={(v) => actualizarForm("team_a", v)}
+              />
+              <Input
+                label="Equipo B"
+                value={form.team_b}
+                onChange={(v) => actualizarForm("team_b", v)}
+              />
 
               {errorFormulario && (
                 <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
@@ -742,12 +856,19 @@ export default function AdminScorePage() {
                 </div>
               )}
 
-              <button onClick={guardarPartido} className="rounded-2xl px-6 py-4 font-black text-black" style={{ backgroundColor: ACCENT }}>
+              <button
+                onClick={guardarPartido}
+                className="rounded-2xl px-6 py-4 font-black text-black"
+                style={{ backgroundColor: ACCENT }}
+              >
                 {editandoId ? "Actualizar partido" : "Guardar partido"}
               </button>
 
               {editandoId && (
-                <button onClick={cancelarEdicion} className="rounded-2xl border border-white/15 px-6 py-4 font-bold text-zinc-300">
+                <button
+                  onClick={cancelarEdicion}
+                  className="rounded-2xl border border-white/15 px-6 py-4 font-bold text-zinc-300"
+                >
                   Cancelar edición
                 </button>
               )}
@@ -783,9 +904,16 @@ export default function AdminScorePage() {
                       ? "bg-white/[0.08]"
                       : "border-white/10 bg-white/[0.06]"
                   }`}
-                  style={partidoActivoId === partido.id ? { borderColor: ACCENT } : undefined}
+                  style={
+                    partidoActivoId === partido.id
+                      ? { borderColor: ACCENT }
+                      : undefined
+                  }
                 >
-                  <button onClick={() => setPartidoActivoId(partido.id)} className="w-full text-left">
+                  <button
+                    onClick={() => setPartidoActivoId(partido.id)}
+                    className="w-full text-left"
+                  >
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
                         <p style={{ color: ACCENT }} className="text-sm">
@@ -831,32 +959,48 @@ export default function AdminScorePage() {
             {partidoActivo && (
               <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.08] p-5 shadow-2xl">
                 <div className="mb-6">
-                  <p className="text-sm uppercase tracking-[0.3em] font-bold" style={{ color: ACCENT }}>
+                  <p
+                    className="text-sm uppercase tracking-[0.3em] font-bold"
+                    style={{ color: ACCENT }}
+                  >
                     Editando score
                   </p>
                   <h2 className="text-2xl font-black">
                     {partidoActivo.team_a} vs {partidoActivo.team_b}
                   </h2>
                   <p className="text-zinc-400">
-                    {partidoActivo.cancha} · {partidoActivo.category ? `${partidoActivo.category} · ` : ""}
-                    {(partidoActivo.sport || clubActual.sport) === "pickleball" ? "Pickleball" : "Padel"}
+                    {partidoActivo.cancha} ·{" "}
+                    {partidoActivo.category
+                      ? `${partidoActivo.category} · `
+                      : ""}
+                    {(partidoActivo.sport || clubActual.sport) === "pickleball"
+                      ? "Pickleball"
+                      : "Padel"}
                   </p>
                 </div>
 
                 <ControlSection title="Estado del partido">
                   <div className="grid gap-3 md:grid-cols-3">
-                    {(["Pendiente", "En juego", "Terminado"] as EstadoPartido[]).map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => updateMatch(partidoActivo.id, { status })}
-                        className={`rounded-2xl px-5 py-4 font-bold ${
-                          partidoActivo.status === status ? "text-black" : "bg-white/10 text-white"
-                        }`}
-                        style={partidoActivo.status === status ? { backgroundColor: ACCENT } : undefined}
-                      >
-                        {status}
-                      </button>
-                    ))}
+                    {(["Pendiente", "En juego", "Terminado"] as EstadoPartido[]).map(
+                      (status) => (
+                        <button
+                          key={status}
+                          onClick={() => updateMatch(partidoActivo.id, { status })}
+                          className={`rounded-2xl px-5 py-4 font-bold ${
+                            partidoActivo.status === status
+                              ? "text-black"
+                              : "bg-white/10 text-white"
+                          }`}
+                          style={
+                            partidoActivo.status === status
+                              ? { backgroundColor: ACCENT }
+                              : undefined
+                          }
+                        >
+                          {status}
+                        </button>
+                      )
+                    )}
                   </div>
                 </ControlSection>
 
@@ -866,6 +1010,8 @@ export default function AdminScorePage() {
                     onPoint={puntoPickleball}
                     onSaveSet={guardarSetPickleball}
                     onChangeServe={cambiarSaque}
+                    onMinusPoint={bajarPuntoPickleball}
+                    onResetScore={resetPickleballScore}
                   />
                 ) : (
                   <PadelControls
@@ -873,28 +1019,37 @@ export default function AdminScorePage() {
                     onPoint={puntoPadel}
                     onChangeServe={cambiarSaque}
                     onChangeMode={cambiarFormatoTercerSet}
+                    onResetGame={resetGame}
                   />
                 )}
 
                 <ControlSection title="Sets">
                   <div className="space-y-3">
                     {partidoActivo.sets.map((set, index) => (
-                      <div key={index} className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[110px_1fr_1fr]">
+                      <div
+                        key={index}
+                        className="grid gap-3 rounded-2xl bg-black/35 p-3 sm:grid-cols-[110px_1fr_1fr]"
+                      >
                         <div className="flex items-center text-sm text-zinc-400">
-                          {index === 2 && partidoActivo.third_set_mode === "Super tiebreak"
+                          {index === 2 &&
+                          partidoActivo.third_set_mode === "Super tiebreak"
                             ? "ST"
                             : `Set ${index + 1}`}
                         </div>
 
                         <input
                           value={set.a}
-                          onChange={(e) => actualizarSet(partidoActivo, index, "a", e.target.value)}
+                          onChange={(e) =>
+                            actualizarSet(partidoActivo, index, "a", e.target.value)
+                          }
                           className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                         />
 
                         <input
                           value={set.b}
-                          onChange={(e) => actualizarSet(partidoActivo, index, "b", e.target.value)}
+                          onChange={(e) =>
+                            actualizarSet(partidoActivo, index, "b", e.target.value)
+                          }
                           className="w-full rounded-xl border border-white/10 bg-white/10 p-3 text-center font-bold outline-none focus:border-green-400"
                         />
                       </div>
@@ -915,11 +1070,13 @@ function PadelControls({
   onPoint,
   onChangeServe,
   onChangeMode,
+  onResetGame,
 }: {
   partido: Partido;
   onPoint: (partido: Partido, ganador: "A" | "B") => void;
   onChangeServe: (partido: Partido) => void;
   onChangeMode: (partido: Partido, mode: ModoTercerSet) => void;
+  onResetGame: (partido: Partido) => void;
 }) {
   const activeIndex = getActiveSetIndex(partido);
   const set = partido.sets[activeIndex] || { a: "0", b: "0" };
@@ -930,7 +1087,15 @@ function PadelControls({
 
   return (
     <>
-      <ControlSection title={isSuperTie ? "Super tiebreak a 10" : isTieBreak ? "Tiebreak a 7" : "Score del game"}>
+      <ControlSection
+        title={
+          isSuperTie
+            ? "Super tiebreak a 10"
+            : isTieBreak
+            ? "Tiebreak a 7"
+            : "Score del game"
+        }
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <button
             onClick={() => onPoint(partido, "A")}
@@ -963,28 +1128,45 @@ function PadelControls({
           </p>
         </div>
 
-        <button
-          onClick={() => onChangeServe(partido)}
-          className="mt-4 rounded-2xl border border-white/10 px-5 py-4 font-bold text-white"
-        >
-          Cambiar saque manualmente
-        </button>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <button
+            onClick={() => onChangeServe(partido)}
+            className="rounded-2xl border border-white/10 px-5 py-4 font-bold text-white"
+          >
+            Cambiar saque manualmente
+          </button>
+
+          <button
+            onClick={() => onResetGame(partido)}
+            className="rounded-2xl border border-red-400/40 px-5 py-4 font-bold text-red-300"
+          >
+            Borrar game actual
+          </button>
+        </div>
       </ControlSection>
 
       <ControlSection title="Formato del tercer set">
         <div className="grid gap-3 md:grid-cols-2">
-          {(["Tercer set completo", "Super tiebreak"] as ModoTercerSet[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => onChangeMode(partido, mode)}
-              className={`rounded-2xl px-5 py-4 font-bold ${
-                partido.third_set_mode === mode ? "text-black" : "bg-white/10 text-white"
-              }`}
-              style={partido.third_set_mode === mode ? { backgroundColor: ACCENT } : undefined}
-            >
-              {mode}
-            </button>
-          ))}
+          {(["Tercer set completo", "Super tiebreak"] as ModoTercerSet[]).map(
+            (mode) => (
+              <button
+                key={mode}
+                onClick={() => onChangeMode(partido, mode)}
+                className={`rounded-2xl px-5 py-4 font-bold ${
+                  partido.third_set_mode === mode
+                    ? "text-black"
+                    : "bg-white/10 text-white"
+                }`}
+                style={
+                  partido.third_set_mode === mode
+                    ? { backgroundColor: ACCENT }
+                    : undefined
+                }
+              >
+                {mode}
+              </button>
+            )
+          )}
         </div>
       </ControlSection>
     </>
@@ -996,11 +1178,15 @@ function PickleballControls({
   onPoint,
   onSaveSet,
   onChangeServe,
+  onMinusPoint,
+  onResetScore,
 }: {
   partido: Partido;
   onPoint: (partido: Partido, ganador: "A" | "B") => void;
   onSaveSet: (partido: Partido) => void;
   onChangeServe: (partido: Partido) => void;
+  onMinusPoint: (partido: Partido, lado: "A" | "B") => void;
+  onResetScore: (partido: Partido) => void;
 }) {
   return (
     <ControlSection title="Score Pickleball">
@@ -1020,6 +1206,20 @@ function PickleballControls({
         >
           + Punto {partido.team_b}
         </button>
+
+        <button
+          onClick={() => onMinusPoint(partido, "A")}
+          className="rounded-2xl border border-red-400/40 px-5 py-4 font-bold text-red-300"
+        >
+          - Punto {partido.team_a}
+        </button>
+
+        <button
+          onClick={() => onMinusPoint(partido, "B")}
+          className="rounded-2xl border border-red-400/40 px-5 py-4 font-bold text-red-300"
+        >
+          - Punto {partido.team_b}
+        </button>
       </div>
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
@@ -1037,12 +1237,19 @@ function PickleballControls({
         </p>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
         <button
           onClick={() => onChangeServe(partido)}
           className="rounded-2xl border border-white/10 px-5 py-4 font-bold text-white"
         >
-          Cambiar saque manualmente
+          Cambiar saque
+        </button>
+
+        <button
+          onClick={() => onResetScore(partido)}
+          className="rounded-2xl border border-red-400/40 px-5 py-4 font-bold text-red-300"
+        >
+          Reiniciar score
         </button>
 
         <button
