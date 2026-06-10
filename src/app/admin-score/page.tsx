@@ -142,6 +142,12 @@ function getPadelThirdLabel(partido: Partido) {
   return partido.third_set_mode === "Super tiebreak" ? "ST" : "S3";
 }
 
+function isPadelMatchFinished(sets: { a: string; b: string }[], activeSetIndex: number) {
+  const won = countSetsWon(sets);
+
+  return won.a >= 2 || won.b >= 2 || activeSetIndex === 2;
+}
+
 export default function AdminScorePage() {
   const [clubActual, setClubActual] = useState<ClubAccess | null>(null);
   const [pin, setPin] = useState("");
@@ -507,7 +513,7 @@ export default function AdminScorePage() {
             tbA > tbB ? { a: "7", b: "6" } : { a: "6", b: "7" };
         }
 
-        const won = countSetsWon(sets);
+        const partidoTerminado = isPadelMatchFinished(sets, activeSetIndex);
 
         updateMatch(partido.id, {
           sets,
@@ -515,7 +521,7 @@ export default function AdminScorePage() {
           game_b: "0",
           serving,
           server_number: 1,
-          status: won.a === 2 || won.b === 2 ? "Terminado" : "En juego",
+          status: partidoTerminado ? "Terminado" : "En juego",
         });
         return;
       }
@@ -571,7 +577,8 @@ export default function AdminScorePage() {
     };
 
     if (
-      (nextSetA > 7 || nextSetB > 7) ||
+      nextSetA > 7 ||
+      nextSetB > 7 ||
       (nextSetA === 7 && nextSetB < 5) ||
       (nextSetB === 7 && nextSetA < 5)
     ) {
@@ -595,6 +602,9 @@ export default function AdminScorePage() {
       nextSets = [...sets, { a: "0", b: "0" }];
     }
 
+    const partidoTerminado =
+      setFinished && isPadelMatchFinished(nextSets, activeSetIndex);
+
     const nextServing = serving === "A" ? "B" : "A";
 
     updateMatch(partido.id, {
@@ -603,7 +613,7 @@ export default function AdminScorePage() {
       game_b: "0",
       serving: nextServing,
       server_number: 1,
-      status: won.a === 2 || won.b === 2 ? "Terminado" : "En juego",
+      status: partidoTerminado ? "Terminado" : "En juego",
     });
   }
 
