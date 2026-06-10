@@ -30,6 +30,11 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     sport: "pickleball",
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/PickleTour.jpeg",
   },
+  "0102": {
+    club: "Canario Padel Club",
+    sport: "padel",
+    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/CanarioPadelClub.png",
+  },
 };
 
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
