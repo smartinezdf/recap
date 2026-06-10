@@ -31,7 +31,7 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/PickleTour.jpeg",
   },
   "0102": {
-    club: "Canario Padel Club",
+    club: "Llanos Padel Tour",
     sport: "padel",
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/CanarioPadelClub.png",
   },
