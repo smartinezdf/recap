@@ -34,7 +34,7 @@ const SCORE_CLUBS: ScoreClub[] = [
       "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/PickleTour.jpeg",
   },
   {
-    name: "Canario Padel Club",
+    name: "Llanos Padel Club",
     sport: "padel",
     logo_url:
       "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/CanarioPadelClub.png",
