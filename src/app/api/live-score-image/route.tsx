@@ -28,7 +28,7 @@ export async function GET() {
       <div
         style={{
           width: "1400px",
-          height: "430px",
+          height: "260px",
           background: "transparent",
           display: "flex",
           padding: "18px",
@@ -39,6 +39,7 @@ export async function GET() {
         <div
           style={{
             width: "760px",
+            height: "220px",
             background: "rgba(18, 24, 20, 0.96)",
             borderRadius: "26px",
             border: "1px solid rgba(255,255,255,0.14)",
@@ -134,7 +135,7 @@ export async function GET() {
     ),
     {
       width: 1400,
-      height: 430,
+      height: 260,
       headers: {
         "Cache-Control": "no-store, no-cache, max-age=0",
       },
