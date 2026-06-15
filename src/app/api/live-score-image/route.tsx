@@ -56,12 +56,27 @@ export async function GET(req: Request) {
     return sameCourt && sameClub;
   }) as Partido | undefined;
 
-  if (!partido) {
-    return new ImageResponse(<div style={{ width: 700, height: 360 }} />, {
-      width: 700,
-      height: 360,
-    });
-  }
+if (!partido) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: 700,
+          height: 360,
+          background: "black",
+          color: "white",
+          fontSize: 32,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        No match found
+      </div>
+    ),
+    { width: 700, height: 360 }
+  );
+}
 
   const sets = partido.sets || [];
   const thirdLabel =
