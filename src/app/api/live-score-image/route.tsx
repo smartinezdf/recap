@@ -28,7 +28,7 @@ export async function GET() {
       <div
         style={{
           width: "1400px",
-          height: "260px",
+          height: "230px",
           background: "transparent",
           display: "flex",
           padding: "18px",
@@ -38,15 +38,14 @@ export async function GET() {
       >
         <div
           style={{
-            width: "760px",
-            height: "220px",
+            width: "680px",
             background: "rgba(18, 24, 20, 0.96)",
-            borderRadius: "26px",
+            borderRadius: "24px",
             border: "1px solid rgba(255,255,255,0.14)",
             boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
             display: "flex",
             flexDirection: "column",
-            padding: "18px 20px",
+            padding: "16px 18px",
           }}
         >
           <div
@@ -54,30 +53,11 @@ export async function GET() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "14px",
+              marginBottom: "12px",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
-                style={{
-                  color: ACCENT,
-                  fontSize: 13,
-                  fontWeight: 900,
-                  letterSpacing: 4,
-                }}
-              >
-                ● LIVE SCORE
-              </div>
-
-              <div
-                style={{
-                  fontSize: 24,
-                  fontWeight: 900,
-                  marginTop: 4,
-                }}
-              >
-                {p?.tournament || "NO MATCH"}
-              </div>
+            <div style={{ fontSize: 28, fontWeight: 900 }}>
+              {p?.tournament || "NO MATCH"}
             </div>
 
             <div
@@ -91,25 +71,6 @@ export async function GET() {
               }}
             >
               {p?.cancha || ""}
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              color: "#8b8f8c",
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: 2,
-              marginBottom: 6,
-            }}
-          >
-            <div style={{ width: 430 }}>EQUIPO</div>
-            <div style={{ width: 42, textAlign: "center" }}>S1</div>
-            <div style={{ width: 42, textAlign: "center" }}>S2</div>
-            <div style={{ width: 42, textAlign: "center" }}>S3</div>
-            <div style={{ width: 54, textAlign: "center", color: ACCENT }}>
-              GAME
             </div>
           </div>
 
@@ -135,7 +96,7 @@ export async function GET() {
     ),
     {
       width: 1400,
-      height: 260,
+      height: 230,
       headers: {
         "Cache-Control": "no-store, no-cache, max-age=0",
       },
@@ -164,20 +125,14 @@ function TeamRow({
         display: "flex",
         alignItems: "center",
         background: "rgba(5, 8, 6, 0.92)",
-        borderRadius: "18px",
-        padding: "9px 14px",
+        borderRadius: "17px",
+        padding: "10px 14px",
         marginTop: 8,
-        fontSize: 20,
-        fontWeight: 850,
+        fontSize: 22,
+        fontWeight: 800,
       }}
     >
-      <div
-        style={{
-          width: 430,
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ width: 380, display: "flex", alignItems: "center" }}>
         <div
           style={{
             width: 15,
@@ -190,10 +145,12 @@ function TeamRow({
         <div>{name}</div>
       </div>
 
-      <div style={{ width: 42, textAlign: "center" }}>{s1}</div>
-      <div style={{ width: 42, textAlign: "center" }}>{s2}</div>
-      <div style={{ width: 42, textAlign: "center", color: ACCENT }}>{s3}</div>
-      <div style={{ width: 54, textAlign: "center", color: ACCENT }}>{game}</div>
+      <div style={{ width: 48, textAlign: "center" }}>{s1}</div>
+      <div style={{ width: 48, textAlign: "center" }}>{s2}</div>
+      <div style={{ width: 48, textAlign: "center", color: ACCENT }}>{s3}</div>
+      <div style={{ width: 58, textAlign: "center", color: ACCENT }}>{game}</div>
     </div>
   );
 }
+
+
