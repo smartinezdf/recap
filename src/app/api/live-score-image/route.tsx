@@ -9,10 +9,12 @@ export async function GET() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("live_matches")
     .select("*")
     .limit(1);
+
+  const partido = data?.[0];
 
   return new ImageResponse(
     (
@@ -20,38 +22,38 @@ export async function GET() {
         style={{
           width: "700px",
           height: "360px",
-          background: "black",
+          background: "#111613",
           color: "white",
           display: "flex",
           flexDirection: "column",
-          padding: "20px",
-          fontSize: "20px",
+          padding: "30px",
         }}
       >
-        <div>DEBUG MODE</div>
-
-        <div style={{ marginTop: "20px" }}>
-          ERROR:
+        <div
+          style={{
+            fontSize: 36,
+            fontWeight: 800,
+          }}
+        >
+          {partido?.tournament}
         </div>
 
-        <div style={{ fontSize: "14px" }}>
-          {JSON.stringify(error)}
+        <div
+          style={{
+            marginTop: 20,
+            fontSize: 28,
+          }}
+        >
+          {partido?.team_a}
         </div>
 
-        <div style={{ marginTop: "20px" }}>
-          ROWS:
-        </div>
-
-        <div>
-          {String(data?.length || 0)}
-        </div>
-
-        <div style={{ marginTop: "20px" }}>
-          FIRST RECORD:
-        </div>
-
-        <div style={{ fontSize: "12px" }}>
-          {JSON.stringify(data?.[0] || {})}
+        <div
+          style={{
+            marginTop: 10,
+            fontSize: 28,
+          }}
+        >
+          {partido?.team_b}
         </div>
       </div>
     ),
