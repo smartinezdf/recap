@@ -39,21 +39,27 @@ export async function GET(req: Request) {
     return sameCourt && sameClub;
   });
 
-  if (!partido) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: "700px",
-            height: "360px",
-            background: "transparent",
-            display: "flex",
-          }}
-        />
-      ),
-      { width: 700, height: 360 }
-    );
-  }
+if (!partido) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "700px",
+          height: "360px",
+          background: "black",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 32,
+        }}
+      >
+        NO MATCH FOUND
+      </div>
+    ),
+    { width: 700, height: 360 }
+  );
+}
 
   const sets = partido.sets || [];
   const thirdLabel =
