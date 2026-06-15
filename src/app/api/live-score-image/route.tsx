@@ -28,7 +28,7 @@ export async function GET() {
       <div
         style={{
           width: "700px",
-          height: "360px",
+          height: "260px",
           background: "transparent",
           display: "flex",
           padding: "18px",
@@ -38,68 +38,53 @@ export async function GET() {
       >
         <div
           style={{
-            width: "664px",
-            height: "324px",
-            background: "#111613",
-            borderRadius: "28px",
-            border: "1px solid rgba(255,255,255,0.15)",
+            width: "560px",
+            background: "rgba(18, 24, 20, 0.96)",
+            borderRadius: "26px",
+            border: "1px solid rgba(255,255,255,0.14)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden",
+            padding: "18px 20px",
           }}
         >
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              padding: "18px 22px",
-              borderBottom: "1px solid rgba(255,255,255,0.12)",
+              alignItems: "center",
+              marginBottom: "14px",
             }}
           >
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
-                  display: "flex",
                   color: ACCENT,
                   fontSize: 13,
                   fontWeight: 900,
                   letterSpacing: 4,
                 }}
               >
-                ● EN JUEGO
+                ● LIVE SCORE
               </div>
 
               <div
                 style={{
-                  display: "flex",
-                  marginTop: 7,
-                  fontSize: 31,
+                  fontSize: 24,
                   fontWeight: 900,
+                  marginTop: 4,
                 }}
               >
                 {p?.tournament || "NO MATCH"}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  marginTop: 4,
-                  fontSize: 16,
-                  color: "#a1a1aa",
-                }}
-              >
-                {p ? `${p.round || ""} · ${p.cancha || ""}` : "No hay partido"}
               </div>
             </div>
 
             <div
               style={{
-                display: "flex",
-                height: 32,
-                padding: "7px 14px",
-                borderRadius: 999,
-                border: `1px solid ${ACCENT}`,
                 color: ACCENT,
+                border: `1px solid ${ACCENT}`,
+                borderRadius: 999,
+                padding: "6px 12px",
                 fontSize: 14,
                 fontWeight: 800,
               }}
@@ -111,21 +96,23 @@ export async function GET() {
           <div
             style={{
               display: "flex",
-              padding: "12px 20px 8px",
-              color: "#71717a",
+              color: "#8b8f8c",
               fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: 3,
+              fontWeight: 900,
+              letterSpacing: 2,
+              marginBottom: 6,
             }}
           >
-            <div style={{ display: "flex", width: 380 }}>EQUIPO</div>
-            <div style={{ display: "flex", width: 48 }}>S1</div>
-            <div style={{ display: "flex", width: 48 }}>S2</div>
-            <div style={{ display: "flex", width: 48 }}>S3</div>
-            <div style={{ display: "flex", width: 70, color: ACCENT }}>GAME</div>
+            <div style={{ width: 300 }}>EQUIPO</div>
+            <div style={{ width: 42, textAlign: "center" }}>S1</div>
+            <div style={{ width: 42, textAlign: "center" }}>S2</div>
+            <div style={{ width: 42, textAlign: "center" }}>S3</div>
+            <div style={{ width: 54, textAlign: "center", color: ACCENT }}>
+              GAME
+            </div>
           </div>
 
-          <ScoreRow
+          <TeamRow
             name={p?.team_a || "-"}
             serving={p?.serving === "A"}
             s1={sets[0]?.a || "0"}
@@ -134,7 +121,7 @@ export async function GET() {
             game={p?.game_a || "0"}
           />
 
-          <ScoreRow
+          <TeamRow
             name={p?.team_b || "-"}
             serving={p?.serving === "B"}
             s1={sets[0]?.b || "0"}
@@ -142,33 +129,20 @@ export async function GET() {
             s3={sets[2]?.b || "-"}
             game={p?.game_b || "0"}
           />
-
-          <div
-            style={{
-              display: "flex",
-              marginTop: 6,
-              padding: "0 22px",
-              fontSize: 16,
-              color: "#a1a1aa",
-            }}
-          >
-            Sacando:{" "}
-            <span style={{ color: "white", fontWeight: 900 }}>
-              {p?.serving === "A" ? p?.team_a : p?.team_b}
-            </span>
-          </div>
         </div>
       </div>
     ),
     {
       width: 700,
-      height: 360,
-      headers: { "Cache-Control": "no-store, no-cache, max-age=0" },
+      height: 260,
+      headers: {
+        "Cache-Control": "no-store, no-cache, max-age=0",
+      },
     }
   );
 }
 
-function ScoreRow({
+function TeamRow({
   name,
   serving,
   s1,
@@ -187,33 +161,38 @@ function ScoreRow({
     <div
       style={{
         display: "flex",
-        margin: "8px 16px 0",
-        padding: "14px 16px",
-        borderRadius: "22px",
-        background: "rgba(0,0,0,0.48)",
-        fontSize: 25,
-        fontWeight: 900,
         alignItems: "center",
+        background: "rgba(5, 8, 6, 0.92)",
+        borderRadius: "18px",
+        padding: "12px 14px",
+        marginTop: 8,
+        fontSize: 22,
+        fontWeight: 850,
       }}
     >
-      <div style={{ display: "flex", width: 380, alignItems: "center" }}>
+      <div
+        style={{
+          width: 300,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            width: 13,
-            height: 13,
+            width: 15,
+            height: 15,
             borderRadius: 999,
             background: serving ? ACCENT : "transparent",
             marginRight: 12,
           }}
         />
-        <div style={{ display: "flex" }}>{name}</div>
+        <div>{name}</div>
       </div>
 
-      <div style={{ display: "flex", width: 48 }}>{s1}</div>
-      <div style={{ display: "flex", width: 48 }}>{s2}</div>
-      <div style={{ display: "flex", width: 48, color: ACCENT }}>{s3}</div>
-      <div style={{ display: "flex", width: 70, color: ACCENT }}>{game}</div>
+      <div style={{ width: 42, textAlign: "center" }}>{s1}</div>
+      <div style={{ width: 42, textAlign: "center" }}>{s2}</div>
+      <div style={{ width: 42, textAlign: "center", color: ACCENT }}>{s3}</div>
+      <div style={{ width: 54, textAlign: "center", color: ACCENT }}>{game}</div>
     </div>
   );
 }
