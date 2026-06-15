@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -30,48 +30,16 @@ type Partido = {
   server_number?: number;
 };
 
-function toNumber(value: string | undefined) {
-  const n = Number(value || 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function isSetCompletePadel(set: { a: string; b: string }) {
-  const a = toNumber(set.a);
-  const b = toNumber(set.b);
-
-  if ((a === 7 && b === 6) || (a === 6 && b === 7)) return true;
-  if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2) return true;
-
-  return false;
-}
-
-function isSetCompletePickleball(set: { a: string; b: string }) {
-  const a = toNumber(set.a);
-  const b = toNumber(set.b);
-
-  return (a >= 11 || b >= 11) && Math.abs(a - b) >= 2;
-}
-
-function getActiveSetIndex(partido: Partido) {
-  const sport = partido.sport || "padel";
-
-  const index = partido.sets.findIndex((set) =>
-    sport === "pickleball"
-      ? !isSetCompletePickleball(set)
-      : !isSetCompletePadel(set)
-  );
-
-  if (index === -1) return partido.sets.length - 1;
-  return index;
-}
-
-function getPadelThirdLabel(partido: Partido) {
-  return partido.third_set_mode === "Super tiebreak" ? "ST" : "S3";
-}
-
 export default function LiveScoreOverlayPage() {
-  const searchParams = useSearchParams();
+  return (
+    <Suspense fallback={<main className="h-screen w-screen bg-transparent" />}>
+      <LiveScoreOverlayContent />
+    </Suspense>
+  );
+}
 
+function LiveScoreOverlayContent() {
+  const searchParams = useSearchParams();
   const courtParam = searchParams.get("court") || "1";
   const clubParam = searchParams.get("club");
 
@@ -107,10 +75,7 @@ export default function LiveScoreOverlayPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      setPartidos((data || []) as Partido[]);
-    }
-
+    if (!error) setPartidos((data || []) as Partido[]);
     setCargando(false);
   }
 
@@ -126,10 +91,7 @@ export default function LiveScoreOverlayPage() {
             .toLowerCase()
             .replace(/\s+/g, "")
             .includes(
-              String(clubParam || "")
-                .trim()
-                .toLowerCase()
-                .replace(/\s+/g, "")
+              String(clubParam).trim().toLowerCase().replace(/\s+/g, "")
             )
         : true;
 
@@ -137,11 +99,7 @@ export default function LiveScoreOverlayPage() {
     });
   }, [partidos, cancha, clubParam]);
 
-  if (cargando) {
-    return <main className="h-screen w-screen bg-transparent" />;
-  }
-
-  if (!partidoActivo) {
+  if (cargando || !partidoActivo) {
     return <main className="h-screen w-screen bg-transparent" />;
   }
 
@@ -151,14 +109,8 @@ export default function LiveScoreOverlayPage() {
         <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4">
           <div>
             <div className="mb-1 flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: ACCENT }}
-              />
-              <span
-                className="text-[11px] font-black uppercase tracking-[0.3em]"
-                style={{ color: ACCENT }}
-              >
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: ACCENT }} />
+              <span className="text-[11px] font-black uppercase tracking-[0.3em]" style={{ color: ACCENT }}>
                 En juego
               </span>
             </div>
@@ -189,6 +141,44 @@ export default function LiveScoreOverlayPage() {
       </div>
     </main>
   );
+}
+
+function toNumber(value: string | undefined) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function isSetCompletePadel(set: { a: string; b: string }) {
+  const a = toNumber(set.a);
+  const b = toNumber(set.b);
+
+  if ((a === 7 && b === 6) || (a === 6 && b === 7)) return true;
+  if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2) return true;
+
+  return false;
+}
+
+function isSetCompletePickleball(set: { a: string; b: string }) {
+  const a = toNumber(set.a);
+  const b = toNumber(set.b);
+
+  return (a >= 11 || b >= 11) && Math.abs(a - b) >= 2;
+}
+
+function getActiveSetIndex(partido: Partido) {
+  const sport = partido.sport || "padel";
+
+  const index = partido.sets.findIndex((set) =>
+    sport === "pickleball"
+      ? !isSetCompletePickleball(set)
+      : !isSetCompletePadel(set)
+  );
+
+  return index === -1 ? partido.sets.length - 1 : index;
+}
+
+function getPadelThirdLabel(partido: Partido) {
+  return partido.third_set_mode === "Super tiebreak" ? "ST" : "S3";
 }
 
 function LiveScoreCard({ partido }: { partido: Partido }) {
@@ -260,7 +250,6 @@ function LiveScoreCard({ partido }: { partido: Partido }) {
         <span className="font-bold text-white">
           {partido.serving === "A" ? partido.team_a : partido.team_b}
         </span>
-        {sport === "pickleball" && <> · Servidor {partido.server_number || 1}</>}
       </div>
     </div>
   );
