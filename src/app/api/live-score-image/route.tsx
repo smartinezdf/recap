@@ -28,7 +28,7 @@ export async function GET() {
       <div
         style={{
           width: "1400px",
-          height: "600px",
+          height: "430px",
           background: "transparent",
           display: "flex",
           padding: "18px",
@@ -38,7 +38,7 @@ export async function GET() {
       >
         <div
           style={{
-            width: "590px",
+            width: "760px",
             background: "rgba(18, 24, 20, 0.96)",
             borderRadius: "26px",
             border: "1px solid rgba(255,255,255,0.14)",
@@ -103,7 +103,7 @@ export async function GET() {
               marginBottom: 6,
             }}
           >
-            <div style={{ width: 300 }}>EQUIPO</div>
+            <div style={{ width: 430 }}>EQUIPO</div>
             <div style={{ width: 42, textAlign: "center" }}>S1</div>
             <div style={{ width: 42, textAlign: "center" }}>S2</div>
             <div style={{ width: 42, textAlign: "center" }}>S3</div>
@@ -134,7 +134,7 @@ export async function GET() {
     ),
     {
       width: 1400,
-      height: 600,
+      height: 430,
       headers: {
         "Cache-Control": "no-store, no-cache, max-age=0",
       },
@@ -172,7 +172,7 @@ function TeamRow({
     >
       <div
         style={{
-          width: 300,
+          width: 430,
           display: "flex",
           alignItems: "center",
         }}
