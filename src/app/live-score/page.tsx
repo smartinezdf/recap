@@ -110,6 +110,7 @@ export default function LiveScorePage() {
     null
   );
   const [canchaSeleccionada, setCanchaSeleccionada] = useState("Cancha 1");
+  const [verTodas, setVerTodas] = useState(false);
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -134,6 +135,27 @@ export default function LiveScorePage() {
       ),
     [partidosClub, canchaSeleccionada]
   );
+
+  const partidosMostrados = useMemo(() => {
+    const lista = verTodas ? partidosClub : partidosCancha;
+
+    return [...lista].sort((a, b) => {
+      const ordenEstado: Record<EstadoPartido, number> = {
+        "En juego": 0,
+        Pendiente: 1,
+        Terminado: 2,
+      };
+
+      const estadoA = ordenEstado[a.status] ?? 3;
+      const estadoB = ordenEstado[b.status] ?? 3;
+
+      if (estadoA !== estadoB) return estadoA - estadoB;
+
+      return String(a.match_time || "").localeCompare(
+        String(b.match_time || "")
+      );
+    });
+  }, [verTodas, partidosClub, partidosCancha]);
 
   useEffect(() => {
     cargarPartidos();
@@ -214,6 +236,7 @@ export default function LiveScorePage() {
                 onClick={() => {
                   setClubSeleccionado(null);
                   setMenuOpen(false);
+                  setVerTodas(false);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
@@ -247,6 +270,7 @@ export default function LiveScorePage() {
                 onClick={() => {
                   setClubSeleccionado(club);
                   setCanchaSeleccionada("Cancha 1");
+                  setVerTodas(false);
                 }}
                 className="rounded-[2rem] border border-white/10 bg-white/[0.07] p-6 text-left transition hover:border-white/30 hover:bg-white/[0.1]"
               >
@@ -275,7 +299,10 @@ export default function LiveScorePage() {
       {clubSeleccionado && (
         <section className="mx-auto max-w-7xl px-5 py-8">
           <button
-            onClick={() => setClubSeleccionado(null)}
+            onClick={() => {
+              setClubSeleccionado(null);
+              setVerTodas(false);
+            }}
             className="mb-6 rounded-full border border-white/10 px-5 py-3 text-sm text-zinc-300"
           >
             ← Cambiar club
@@ -319,14 +346,17 @@ export default function LiveScorePage() {
                 return (
                   <button
                     key={cancha}
-                    onClick={() => setCanchaSeleccionada(cancha)}
+                    onClick={() => {
+                      setCanchaSeleccionada(cancha);
+                      setVerTodas(false);
+                    }}
                     className={`rounded-2xl border px-4 py-4 text-left transition ${
-                      canchaSeleccionada === cancha
+                      !verTodas && canchaSeleccionada === cancha
                         ? "text-black"
                         : "border-white/10 bg-black/30 text-white hover:border-white/40"
                     }`}
                     style={
-                      canchaSeleccionada === cancha
+                      !verTodas && canchaSeleccionada === cancha
                         ? { backgroundColor: ACCENT, borderColor: ACCENT }
                         : undefined
                     }
@@ -347,34 +377,52 @@ export default function LiveScorePage() {
                 );
               })}
             </div>
+
+            <button
+              onClick={() => setVerTodas(!verTodas)}
+              className={`mt-4 w-full rounded-2xl border px-4 py-3 text-sm font-bold transition ${
+                verTodas
+                  ? "text-black"
+                  : "border-white/10 bg-black/30 text-white hover:border-white/40"
+              }`}
+              style={
+                verTodas
+                  ? { backgroundColor: ACCENT, borderColor: ACCENT }
+                  : undefined
+              }
+            >
+              {verTodas ? "Viendo todas las canchas" : "Ver todos los scores"}
+            </button>
           </div>
 
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-black">{canchaSeleccionada}</h3>
+              <h3 className="text-2xl font-black">
+                {verTodas ? "Todos los scores" : canchaSeleccionada}
+              </h3>
               <p className="text-sm text-zinc-400">
                 {cargando ? "Cargando..." : "Live Score"}
               </p>
             </div>
 
             <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
-              {partidosCancha.length} partidos
+              {partidosMostrados.length} partidos
             </span>
           </div>
 
-          {partidosCancha.length === 0 && !cargando && (
+          {partidosMostrados.length === 0 && !cargando && (
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-              No hay score disponible para {canchaSeleccionada} en este momento.
+              No hay score disponible en este momento.
             </div>
           )}
 
-          <div className="grid gap-5">
-            {partidosCancha.map((partido) => (
+          <div className="grid gap-4">
+            {partidosMostrados.map((partido) => (
               <article
                 key={partido.id}
-                className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.06] shadow-2xl"
+                className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] shadow-xl"
               >
-                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 p-4">
                   <div>
                     <div className="mb-2 flex items-center gap-2">
                       <span
@@ -397,11 +445,11 @@ export default function LiveScorePage() {
                       </span>
                     </div>
 
-                    <h4 className="text-2xl font-black md:text-3xl">
+                    <h4 className="text-xl font-black md:text-2xl">
                       {partido.tournament}
                     </h4>
 
-                    <p className="text-zinc-400">
+                    <p className="text-sm text-zinc-400">
                       {partido.category ? `${partido.category} · ` : ""}
                       {partido.round} · {partido.match_time}
                     </p>
@@ -421,8 +469,8 @@ export default function LiveScorePage() {
 
                 <LiveScoreCard partido={partido} />
 
-                <div className="flex flex-wrap gap-3 border-t border-white/10 p-5">
-                  <button className="rounded-full border border-white/10 px-5 py-3 text-zinc-300">
+                <div className="flex flex-wrap gap-3 border-t border-white/10 p-3">
+                  <button className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
                     Streaming · Próximamente
                   </button>
                 </div>
@@ -456,10 +504,10 @@ function LiveScoreCard({ partido }: { partido: Partido }) {
   return (
     <div>
       <div
-        className={`grid gap-2 border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.2em] text-zinc-500 ${
+        className={`grid gap-2 border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-zinc-500 ${
           sport === "padel"
-            ? "grid-cols-[1fr_44px_44px_44px_64px]"
-            : "grid-cols-[1fr_44px_44px_44px]"
+            ? "grid-cols-[1fr_38px_38px_38px_52px]"
+            : "grid-cols-[1fr_38px_38px_38px]"
         }`}
       >
         <div>Equipo</div>
@@ -479,7 +527,7 @@ function LiveScoreCard({ partido }: { partido: Partido }) {
         ))}
       </div>
 
-      <div className="space-y-3 p-4">
+      <div className="space-y-2 p-3">
         <ScoreRow
           sport={sport}
           name={partido.team_a}
@@ -499,7 +547,7 @@ function LiveScoreCard({ partido }: { partido: Partido }) {
         />
       </div>
 
-      <div className="border-t border-white/10 px-5 pb-5 text-sm text-zinc-400">
+      <div className="border-t border-white/10 px-4 pb-4 text-xs text-zinc-400">
         Sacando:{" "}
         <span className="font-bold text-white">
           {partido.serving === "A" ? partido.team_a : partido.team_b}
@@ -536,15 +584,15 @@ function ScoreRow({
 
   return (
     <div
-      className={`grid items-center gap-2 rounded-3xl bg-black/40 px-4 py-5 text-base md:text-xl ${
+      className={`grid items-center gap-2 rounded-2xl bg-black/40 px-3 py-3 text-sm md:text-base ${
         sport === "padel"
-          ? "grid-cols-[1fr_44px_44px_44px_64px]"
-          : "grid-cols-[1fr_44px_44px_44px]"
+          ? "grid-cols-[1fr_38px_38px_38px_52px]"
+          : "grid-cols-[1fr_38px_38px_38px]"
       }`}
     >
-      <div className="flex min-w-0 items-center gap-3 font-black">
+      <div className="flex min-w-0 items-center gap-2 font-black">
         <span
-          className="h-3.5 w-3.5 shrink-0 rounded-full"
+          className="h-2.5 w-2.5 shrink-0 rounded-full"
           style={{ backgroundColor: serving ? ACCENT : "transparent" }}
         />
         <span className="truncate">{name}</span>
