@@ -628,7 +628,7 @@ function getYoutubeEmbedUrl(url?: string) {
 
   if (!videoId) return "";
 
-  return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+  return `https://www.youtube.com/embed/${videoId}`;
 }
 
 function getYoutubeWatchUrl(url?: string) {
