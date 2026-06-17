@@ -62,6 +62,7 @@ type Partido = {
   game_b: string;
   serving: "A" | "B";
   server_number?: number;
+  stream_url?: string;
 };
 
 const CANCHAS = ["Cancha 1", "Cancha 2", "Cancha 3", "Cancha 4"];
@@ -470,9 +471,7 @@ export default function LiveScorePage() {
                 <LiveScoreCard partido={partido} />
 
                 <div className="flex flex-wrap gap-3 border-t border-white/10 p-3">
-                  <button className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
-                    Streaming · Próximamente
-                  </button>
+                  <StreamButton partido={partido} />
                 </div>
               </article>
             ))}
@@ -612,6 +611,88 @@ function ScoreRow({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function getYoutubeEmbedUrl(url?: string) {
+  if (!url) return "";
+
+  const normalMatch = url.match(/[?&]v=([^&]+)/);
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  const liveMatch = url.match(/youtube\.com\/live\/([^?&]+)/);
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
+
+  const videoId =
+    normalMatch?.[1] || shortMatch?.[1] || liveMatch?.[1] || embedMatch?.[1];
+
+  if (!videoId) return "";
+
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+}
+
+function getYoutubeWatchUrl(url?: string) {
+  if (!url) return "";
+
+  const normalMatch = url.match(/[?&]v=([^&]+)/);
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  const liveMatch = url.match(/youtube\.com\/live\/([^?&]+)/);
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
+
+  const videoId =
+    normalMatch?.[1] || shortMatch?.[1] || liveMatch?.[1] || embedMatch?.[1];
+
+  if (!videoId) return url;
+
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+function StreamButton({ partido }: { partido: Partido }) {
+  const [open, setOpen] = useState(false);
+
+  const embedUrl = getYoutubeEmbedUrl(partido.stream_url);
+  const watchUrl = getYoutubeWatchUrl(partido.stream_url);
+
+  if (!embedUrl) {
+    return (
+      <button className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-500">
+        Streaming · Próximamente
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={() => setOpen(!open)}
+        className="rounded-full border px-4 py-2 text-sm font-bold"
+        style={{
+          borderColor: "#ef4444",
+          color: "#ef4444",
+        }}
+      >
+        {open ? "Cerrar live" : "🔴 Ver en vivo"}
+      </button>
+
+      {open && (
+        <div className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-black">
+          <iframe
+            src={embedUrl}
+            className="aspect-video w-full"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+
+          <a
+            href={watchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block border-t border-white/10 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+          >
+            Ver en pantalla grande
+          </a>
+        </div>
+      )}
     </div>
   );
 }
