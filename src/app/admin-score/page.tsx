@@ -25,11 +25,7 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     sport: "padel",
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
   },
-  "2025": {
-    club: "Pickle Score",
-    sport: "pickleball",
-  
-  },
+
   "0102": {
     club: "Llanos Padel Tour",
     sport: "padel",
