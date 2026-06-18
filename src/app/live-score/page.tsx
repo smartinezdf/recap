@@ -28,7 +28,6 @@ const SCORE_CLUBS: ScoreClub[] = [
       "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
   },
   {
-  {
     name: "Llanos Padel Tour",
     sport: "padel",
     logo_url:
