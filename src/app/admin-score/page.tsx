@@ -31,6 +31,11 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     sport: "padel",
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Llanos.PNG",
   },
+   "7100": {
+    club: "Rarocero",
+    sport: "padel",
+    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/RAYOCERO%20BLANCO.png",
+  },
 };
 
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
