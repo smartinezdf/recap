@@ -1,21 +1,25 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export const dynamic = "force-dynamic";
 
 export default async function UpadelStatusPage() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return <main style={{ padding: 24 }}>Faltan variables de Supabase.</main>;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   const { data, error } = await supabase
     .from("device_heartbeats")
     .select("*")
-    .eq("device_name", "upadel")
+    .eq("club", "upadel")
     .single();
 
   if (error || !data) {
-    return <main style={{ padding: 24 }}>No se encontró el dispositivo.</main>;
+    return <main style={{ padding: 24 }}>No se encontró Upadel.</main>;
   }
 
   const lastSeen = new Date(data.last_seen).getTime();
