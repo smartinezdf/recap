@@ -218,7 +218,7 @@ export default function Page() {
         .from("courts")
         .select("id,club_id,name")
         .eq("club_id", selectedClub.id)
-        .order("display_order"), { ascending: true});
+        .order("display_order", { ascending: true});
 
       console.log("COURTS DATA:", courtsData);
 
