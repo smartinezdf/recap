@@ -47,7 +47,7 @@ function formatTimeLabel(timeStr: string) {
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
-  return `${pad(hh)}:${pad(mm)}`;
+  return pad(hh) + ":" + pad(mm);
 }
 
 function formatSlotRangeLabel(timeStr: string, nextTimeStr?: string) {
