@@ -222,8 +222,6 @@ export default function Page() {
           nullsFirst: false,
         });
 
-      console.log("COURTS DATA:", courtsData);
-
       if (courtsErr) {
         console.error("courts error:", courtsErr);
         setStatusMsg("Error cargando canchas.");
@@ -472,10 +470,7 @@ export default function Page() {
         </Shell>
       </section>
 
-      <section
-        id="experiencia"
-        className="bg-zinc-100 text-zinc-950"
-      >
+      <section id="experiencia" className="bg-zinc-100 text-zinc-950">
         <Shell>
           <div className="py-14 md:py-16">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -660,7 +655,21 @@ export default function Page() {
                             : undefined
                         }
                       >
-                        <div className="font-semibold">{club.name}</div>
+                        <div className="flex items-center gap-3">
+                          {club.logo_url && (
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1">
+                              <img
+                                src={club.logo_url}
+                                alt={club.name}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                          )}
+
+                          <div className="font-semibold">
+                            {club.name}
+                          </div>
+                        </div>
                       </button>
                     );
                   })}
