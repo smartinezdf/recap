@@ -657,13 +657,11 @@ export default function Page() {
                       >
                         <div className="flex items-center gap-3">
                           {club.logo_url && (
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1">
-                              <img
-                                src={club.logo_url}
-                                alt={club.name}
-                                className="h-full w-full object-contain"
-                              />
-                            </div>
+                            <img
+                              src={club.logo_url}
+                              alt={club.name}
+                              className="h-9 w-9 shrink-0 object-contain"
+                            />
                           )}
 
                           <div className="font-semibold">
