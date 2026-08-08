@@ -1,4 +1,3 @@
-```ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -36,18 +35,7 @@ export async function GET(req: Request) {
       },
     });
 
-    /*
-      Obtener la fecha actual en Caracas.
-
-      Ejemplo:
-      2026-08-07
-
-      Luego construimos explícitamente:
-      2026-08-07T00:00:00-04:00
-      2026-08-07T23:59:59.999-04:00
-
-      Esto evita depender del timezone del servidor de Vercel.
-    */
+    // Obtener fecha actual en Caracas: YYYY-MM-DD
     const formatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Caracas",
       year: "numeric",
@@ -57,26 +45,20 @@ export async function GET(req: Request) {
 
     const todayCaracas = formatter.format(new Date());
 
+    // Caracas = UTC-04:00
     const startOfDay = new Date(
-      `${todayCaracas}T00:00:00.000-04:00`
+      todayCaracas + "T00:00:00.000-04:00"
     );
 
     const endOfDay = new Date(
-      `${todayCaracas}T23:59:59.999-04:00`
+      todayCaracas + "T23:59:59.999-04:00"
     );
 
     const { data, error } = await supabase
       .from("clips")
-      .select(`
-        id,
-        club_id,
-        court_id,
-        device_id,
-        video_url,
-        storage_path,
-        created_at,
-        expires_at
-      `)
+      .select(
+        "id, club_id, court_id, device_id, video_url, storage_path, created_at, expires_at"
+      )
       .eq("court_id", courtId)
       .gte("created_at", startOfDay.toISOString())
       .lte("created_at", endOfDay.toISOString())
@@ -106,4 +88,3 @@ export async function GET(req: Request) {
     );
   }
 }
-```
