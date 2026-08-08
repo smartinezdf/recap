@@ -660,7 +660,7 @@ export default function Page() {
                             <img
                               src={club.logo_url}
                               alt={club.name}
-                              className="h-9 w-9 shrink-0 object-contain"
+                              className="h-10 w-10 shrink-0 rounded-full object-cover"
                             />
                           )}
 
