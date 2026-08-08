@@ -216,7 +216,7 @@ export default function Page() {
     (async () => {
       const { data: courtsData, error: courtsErr } = await supabase
         .from("courts")
-        .select("id,club_id,name")
+        .select("id,club_id,name,display_order")
         .eq("club_id", selectedClub.id)
         .order("display_order", { ascending: true});
 
