@@ -220,6 +220,8 @@ export default function Page() {
         .eq("club_id", selectedClub.id)
         .order("display_order"), { ascending: true});
 
+      console.log("COURTS DATA:", courtsData);
+
       if (courtsErr) {
         console.error("courts error:", courtsErr);
         setStatusMsg("Error cargando canchas.");
