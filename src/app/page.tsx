@@ -15,7 +15,8 @@ type Club = {
 type Court = {
   id: string;
   club_id: string;
-  name: string;
+  name: string
+  display_order?: number | null;
 };
 
 type ClubTimeRow = {
@@ -217,7 +218,7 @@ export default function Page() {
         .from("courts")
         .select("id,club_id,name")
         .eq("club_id", selectedClub.id)
-        .order("name");
+        .order("display_order"), { ascending: true});
 
       if (courtsErr) {
         console.error("courts error:", courtsErr);
