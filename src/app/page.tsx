@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,7 +14,7 @@ type Club = {
 type Court = {
   id: string;
   club_id: string;
-  name: string
+  name: string;
   display_order?: number | null;
 };
 
@@ -54,11 +53,11 @@ function formatSlotRangeLabel(timeStr: string, nextTimeStr?: string) {
   const start = formatTimeLabel(timeStr);
 
   if (nextTimeStr) {
-    return `${start} - ${formatTimeLabel(nextTimeStr)}`;
+    return start + " - " + formatTimeLabel(nextTimeStr);
   }
 
   if (timeStr === "21:30:00") {
-    return `${start} - 23:30`;
+    return start + " - 23:30";
   }
 
   return start;
@@ -84,7 +83,7 @@ function prettyFilenameFromISO(iso: string) {
     .format(d)
     .replace(/:/g, "-");
 
-  return `Recap_${datePart}_${timePart}.mp4`;
+  return "Recap_" + datePart + "_" + timePart + ".mp4";
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -218,7 +217,10 @@ export default function Page() {
         .from("courts")
         .select("id,club_id,name,display_order")
         .eq("club_id", selectedClub.id)
-        .order("display_order", { ascending: true});
+        .order("display_order", {
+          ascending: true,
+          nullsFirst: false,
+        });
 
       console.log("COURTS DATA:", courtsData);
 
@@ -309,7 +311,7 @@ export default function Page() {
         console.error("clips rpc error:", error);
 
         setStatusMsg(
-          `No se pudieron cargar los clips. Error: ${error.message}`
+          "No se pudieron cargar los clips. Error: " + error.message
         );
 
         return;
@@ -320,7 +322,7 @@ export default function Page() {
       console.log("CLIPS ENCONTRADOS:", rows.length);
 
       rows.forEach((clip, index) => {
-        console.log(`CLIP ${index + 1}`, {
+        console.log("CLIP " + (index + 1), {
           id: clip.id,
           court_id: clip.court_id,
           created_at: clip.created_at,
@@ -353,7 +355,7 @@ export default function Page() {
       <div className="pointer-events-none fixed inset-0 opacity-40">
         <div
           className="absolute -top-28 left-1/2 h-80 w-[52rem] -translate-x-1/2 rounded-full blur-3xl"
-          style={{ background: `${ACCENT}33` }}
+          style={{ background: ACCENT + "33" }}
         />
 
         <div className="absolute top-56 left-[-10rem] h-80 w-80 rounded-full bg-white/10 blur-3xl" />
@@ -652,7 +654,8 @@ export default function Page() {
                         style={
                           isSelected
                             ? {
-                                boxShadow: `0 0 0 2px ${ACCENT}88`,
+                                boxShadow:
+                                  "0 0 0 2px " + ACCENT + "88",
                               }
                             : undefined
                         }
@@ -691,7 +694,8 @@ export default function Page() {
                           style={
                             isSelected
                               ? {
-                                  boxShadow: `0 0 0 2px ${ACCENT}88`,
+                                  boxShadow:
+                                    "0 0 0 2px " + ACCENT + "88",
                                 }
                               : undefined
                           }
@@ -726,7 +730,8 @@ export default function Page() {
                           style={
                             isSelected
                               ? {
-                                  boxShadow: `0 0 0 2px ${ACCENT}88`,
+                                  boxShadow:
+                                    "0 0 0 2px " + ACCENT + "88",
                                 }
                               : undefined
                           }
@@ -815,9 +820,12 @@ export default function Page() {
                                 </a>
 
                                 <a
-                                  href={`/api/download?url=${encodeURIComponent(
-                                    url
-                                  )}&name=${encodeURIComponent(filename)}`}
+                                  href={
+                                    "/api/download?url=" +
+                                    encodeURIComponent(url) +
+                                    "&name=" +
+                                    encodeURIComponent(filename)
+                                  }
                                   className="rounded-full px-3 py-2 text-xs font-semibold text-zinc-950"
                                   style={{ background: ACCENT }}
                                 >
@@ -843,4 +851,3 @@ export default function Page() {
     </main>
   );
 }
-```
