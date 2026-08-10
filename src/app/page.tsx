@@ -755,6 +755,47 @@ export default function Page() {
               </div>
             </div>
 
+            {selectedClub && selectedCourtId && selectedTime && (
+              <div className="mt-8 lg:hidden">
+                <Glass className="p-4">
+                  <div className="text-sm font-semibold leading-relaxed">
+                    {selectedClub.name}
+                    {" • "}
+                    {selectedCourtName}
+                    {" • "}
+                    {selectedTimeLabel}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <button
+                      onClick={resetSelections}
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold"
+                    >
+                      Restablecer
+                    </button>
+
+                    <button
+                      onClick={handleSearch}
+                      disabled={isSearching}
+                      className={clsx(
+                        "rounded-full px-4 py-3 text-sm font-semibold",
+                        !isSearching
+                          ? "text-zinc-950"
+                          : "cursor-not-allowed bg-white/10 text-white/40"
+                      )}
+                      style={
+                        !isSearching
+                          ? { background: ACCENT }
+                          : undefined
+                      }
+                    >
+                      {isSearching ? "Buscando..." : "Buscar clips"}
+                    </button>
+                  </div>
+                </Glass>
+              </div>
+            )}
+
             <div ref={resultsRef} className="mt-14">
               {hasSearched && statusMsg && (
                 <Glass className="mx-auto max-w-xl p-8 text-center">
