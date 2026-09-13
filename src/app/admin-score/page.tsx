@@ -26,14 +26,9 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
   },
   "0102": {
-    club: "Llanos Padel Tour",
+    club: "Saque Padel Club",
     sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Llanos.PNG",
-  },
-  "7100": {
-    club: "Rayocero",
-    sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Rayocero.png",
+    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Blanco%20con%20verde%20PNG.png",
   },
 };
 
