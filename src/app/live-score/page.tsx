@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 const ACCENT = "#3FCD31";
+const DARK = "#111411";
+const SOFT_BG = "#F5F7F5";
 
 type Sport = "padel" | "pickleball";
 
@@ -37,6 +39,7 @@ const SCORE_CLUBS: ScoreClub[] = [
 
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
 type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
+type FiltroEstado = "Todos" | "En juego" | "Pendiente" | "Terminado";
 
 type Partido = {
   id: string;
@@ -104,40 +107,37 @@ export default function LiveScorePage() {
   const [clubSeleccionado, setClubSeleccionado] = useState<ScoreClub | null>(
     null
   );
-
-  const [canchaSeleccionada, setCanchaSeleccionada] =
-    useState("Cancha 1");
-
-  const [verTodas, setVerTodas] = useState(false);
+  const [canchaSeleccionada, setCanchaSeleccionada] = useState("Todas");
+  const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("Todos");
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cargando, setCargando] = useState(true);
 
-  const partidosClub = useMemo(
-    () =>
-      partidos.filter(
-        (partido) =>
-          !clubSeleccionado ||
-          String(partido.club || "").trim() ===
-            String(clubSeleccionado.name).trim()
-      ),
-    [partidos, clubSeleccionado]
-  );
+  const partidosClub = useMemo(() => {
+    return partidos.filter(
+      (partido) =>
+        !clubSeleccionado ||
+        String(partido.club || "").trim() ===
+          String(clubSeleccionado.name).trim()
+    );
+  }, [partidos, clubSeleccionado]);
 
-  const partidosCancha = useMemo(
-    () =>
-      partidosClub.filter(
+  const partidosMostrados = useMemo(() => {
+    let lista = [...partidosClub];
+
+    if (canchaSeleccionada !== "Todas") {
+      lista = lista.filter(
         (partido) =>
           String(partido.cancha || "").trim() ===
           String(canchaSeleccionada).trim()
-      ),
-    [partidosClub, canchaSeleccionada]
-  );
+      );
+    }
 
-  const partidosMostrados = useMemo(() => {
-    const lista = verTodas ? partidosClub : partidosCancha;
+    if (filtroEstado !== "Todos") {
+      lista = lista.filter((partido) => partido.status === filtroEstado);
+    }
 
-    return [...lista].sort((a, b) => {
+    return lista.sort((a, b) => {
       const ordenEstado: Record<EstadoPartido, number> = {
         "En juego": 0,
         Pendiente: 1,
@@ -147,15 +147,13 @@ export default function LiveScorePage() {
       const estadoA = ordenEstado[a.status] ?? 3;
       const estadoB = ordenEstado[b.status] ?? 3;
 
-      if (estadoA !== estadoB) {
-        return estadoA - estadoB;
-      }
+      if (estadoA !== estadoB) return estadoA - estadoB;
 
       return String(a.match_time || "").localeCompare(
         String(b.match_time || "")
       );
     });
-  }, [verTodas, partidosClub, partidosCancha]);
+  }, [partidosClub, canchaSeleccionada, filtroEstado]);
 
   useEffect(() => {
     cargarPartidos();
@@ -164,11 +162,7 @@ export default function LiveScorePage() {
       .channel("live_matches_realtime")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "live_matches",
-        },
+        { event: "*", schema: "public", table: "live_matches" },
         () => cargarPartidos()
       )
       .subscribe();
@@ -194,70 +188,62 @@ export default function LiveScorePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050806] text-white">
+    <main className="min-h-screen text-[#111411]" style={{ background: SOFT_BG }}>
       {/* HEADER */}
 
-      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white px-5 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="rounded-xl border border-zinc-200 px-4 py-3 text-xl text-black"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-lg text-black shadow-sm"
             >
               ☰
             </button>
 
             <div>
               <p
-                className="text-xs font-bold uppercase tracking-[0.35em]"
+                className="text-[10px] font-black uppercase tracking-[0.28em]"
                 style={{ color: ACCENT }}
               >
-                {clubSeleccionado?.name || "Recap"}
+                {clubSeleccionado?.name || "RECAP"}
               </p>
 
-              <h1 className="text-2xl font-black text-black">
-                Score en Vivo
+              <h1 className="text-lg font-black leading-tight text-black sm:text-xl">
+                Live Score
               </h1>
             </div>
           </div>
 
           <Link href="/">
-            <img
-              src="/RecapLogo.png"
-              alt="Recap"
-              className="h-10 w-auto"
-            />
+            <img src="/RecapLogo.png" alt="Recap" className="h-8 w-auto sm:h-9" />
           </Link>
         </div>
 
         {menuOpen && (
-          <div className="mt-4 border-t border-zinc-200 pt-4">
-            <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3">
+          <div className="border-t border-zinc-200 bg-white">
+            <div className="mx-auto grid max-w-7xl gap-2 px-4 py-3 sm:px-5 md:grid-cols-3">
               <Link
-                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+                className="rounded-xl bg-zinc-100 px-4 py-3 font-bold text-black"
                 href="/"
               >
                 Clips
               </Link>
 
               <Link
-                className="rounded-2xl bg-zinc-100 p-4 font-bold text-black"
+                className="rounded-xl bg-zinc-100 px-4 py-3 font-bold text-black"
                 href="/live-score"
                 onClick={() => {
                   setClubSeleccionado(null);
                   setMenuOpen(false);
-                  setVerTodas(false);
-
-                  window.scrollTo({
-                    top: 0,
-                    behavior: "smooth",
-                  });
+                  setCanchaSeleccionada("Todas");
+                  setFiltroEstado("Todos");
                 }}
               >
                 Score en Vivo
               </Link>
 
-              <button className="rounded-2xl bg-zinc-100 p-4 text-left font-bold text-zinc-500">
+              <button className="rounded-xl bg-zinc-100 px-4 py-3 text-left font-bold text-zinc-500">
                 Streaming · Próximamente
               </button>
             </div>
@@ -268,41 +254,46 @@ export default function LiveScorePage() {
       {/* CLUB SELECTION */}
 
       {!clubSeleccionado && (
-        <section className="mx-auto max-w-7xl px-5 py-8">
-          <div className="mb-8">
-            <h2 className="text-4xl font-black md:text-6xl">
+        <section className="mx-auto max-w-7xl px-4 py-7 sm:px-5 sm:py-10">
+          <div className="mb-6">
+            <p
+              className="mb-2 text-xs font-black uppercase tracking-[0.22em]"
+              style={{ color: ACCENT }}
+            >
+              RECAP LIVE
+            </p>
+
+            <h2 className="text-3xl font-black sm:text-4xl md:text-5xl">
               Selecciona el club
             </h2>
 
-            <p className="mt-2 text-zinc-400">
-              Elige el club para ver los partidos y scores en vivo.
+            <p className="mt-2 max-w-xl text-sm text-zinc-500 sm:text-base">
+              Sigue los partidos, sets y scores en tiempo real.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-3">
             {SCORE_CLUBS.map((club) => (
               <button
                 key={club.name}
                 onClick={() => {
                   setClubSeleccionado(club);
-                  setCanchaSeleccionada("Cancha 1");
-                  setVerTodas(false);
+                  setCanchaSeleccionada("Todas");
+                  setFiltroEstado("Todos");
                 }}
-                className="rounded-[2rem] border border-white/10 bg-white/[0.07] p-6 text-left transition hover:border-white/30 hover:bg-white/[0.1]"
+                className="rounded-2xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md"
               >
                 <div className="flex items-center gap-4">
                   <img
                     src={club.logo_url}
                     alt={club.name}
-                    className="h-14 w-14 rounded-full object-cover ring-1 ring-white/10"
+                    className="h-14 w-14 rounded-full border border-zinc-200 object-cover"
                   />
 
                   <div>
-                    <p className="text-2xl font-black">
-                      {club.name}
-                    </p>
+                    <p className="text-lg font-black text-black">{club.name}</p>
 
-                    <p className="mt-1 text-sm text-zinc-400">
+                    <p className="mt-1 text-sm text-zinc-500">
                       {club.sport === "pickleball"
                         ? "Pickleball Score"
                         : "Padel Score"}
@@ -315,236 +306,207 @@ export default function LiveScorePage() {
         </section>
       )}
 
-      {/* CLUB PAGE */}
+      {/* CLUB VIEW */}
 
       {clubSeleccionado && (
-        <section className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8">
-          <button
-            onClick={() => {
-              setClubSeleccionado(null);
-              setVerTodas(false);
-            }}
-            className="mb-5 rounded-full border border-white/10 px-4 py-2.5 text-sm text-zinc-300"
-          >
-            ← Cambiar club
-          </button>
+        <section className="mx-auto max-w-7xl px-4 py-5 sm:px-5 sm:py-7">
+          {/* CLUB MINI HEADER */}
 
-          {/* CLUB TITLE */}
+          <div className="mb-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <img
+                src={clubSeleccionado.logo_url}
+                alt={clubSeleccionado.name}
+                className="h-12 w-12 rounded-full border border-zinc-200 object-cover"
+              />
 
-          <div className="mb-6 flex items-center gap-4">
-            <img
-              src={clubSeleccionado.logo_url}
-              alt={clubSeleccionado.name}
-              className="h-14 w-14 rounded-full object-cover sm:h-16 sm:w-16"
-            />
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-[10px] font-black uppercase tracking-[0.2em]"
+                  style={{ color: ACCENT }}
+                >
+                  Live Score
+                </p>
 
-            <div>
-              <h2 className="text-3xl font-black sm:text-4xl md:text-6xl">
-                {clubSeleccionado.name}
-              </h2>
+                <h2 className="truncate text-xl font-black sm:text-2xl">
+                  {clubSeleccionado.name}
+                </h2>
+              </div>
 
-              <p className="mt-1 text-sm text-zinc-400 sm:mt-2">
-                Selecciona la cancha y sigue el score en vivo.
-              </p>
+              <button
+                onClick={() => {
+                  setClubSeleccionado(null);
+                  setCanchaSeleccionada("Todas");
+                  setFiltroEstado("Todos");
+                }}
+                className="rounded-full border border-zinc-200 px-3 py-2 text-xs font-bold text-zinc-600"
+              >
+                Cambiar
+              </button>
             </div>
           </div>
 
-          {/* COURTS */}
+          {/* FILTERS */}
 
-          <div className="mb-7 rounded-[2rem] border border-white/10 bg-white/[0.07] p-4">
-            <p className="mb-3 text-sm font-bold text-zinc-300">
-              Canchas
-            </p>
+          <div className="mb-4 overflow-x-auto">
+            <div className="flex min-w-max gap-2">
+              {(["Todos", "En juego", "Pendiente", "Terminado"] as FiltroEstado[]).map(
+                (estado) => {
+                  const active = filtroEstado === estado;
 
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {CANCHAS.map((cancha) => {
-                const total = partidosClub.filter(
-                  (partido) =>
-                    String(partido.cancha || "").trim() ===
-                    String(cancha).trim()
-                ).length;
+                  return (
+                    <button
+                      key={estado}
+                      onClick={() => setFiltroEstado(estado)}
+                      className={`rounded-full px-4 py-2 text-xs font-black transition ${
+                        active
+                          ? "text-white"
+                          : "border border-zinc-200 bg-white text-zinc-600"
+                      }`}
+                      style={
+                        active
+                          ? {
+                              backgroundColor: DARK,
+                            }
+                          : undefined
+                      }
+                    >
+                      {estado === "En juego"
+                        ? "● Live"
+                        : estado === "Pendiente"
+                        ? "Próximos"
+                        : estado === "Terminado"
+                        ? "Final"
+                        : "Todos"}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          </div>
 
-                const enVivo = partidosClub.filter(
-                  (partido) =>
-                    String(partido.cancha || "").trim() ===
-                      String(cancha).trim() &&
-                    partido.status === "En juego"
-                ).length;
+          {/* COURT TABS */}
 
-                const active =
-                  !verTodas &&
-                  canchaSeleccionada === cancha;
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex min-w-max gap-2">
+              {["Todas", ...CANCHAS].map((cancha) => {
+                const active = canchaSeleccionada === cancha;
+
+                const label =
+                  cancha === "Todas"
+                    ? "Todas"
+                    : cancha.replace("Cancha ", "C");
 
                 return (
                   <button
                     key={cancha}
-                    onClick={() => {
-                      setCanchaSeleccionada(cancha);
-                      setVerTodas(false);
-                    }}
-                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                    onClick={() => setCanchaSeleccionada(cancha)}
+                    className={`rounded-xl px-4 py-2.5 text-sm font-black transition ${
                       active
                         ? "text-black"
-                        : "border-white/10 bg-black/30 text-white hover:border-white/40"
+                        : "border border-zinc-200 bg-white text-zinc-500"
                     }`}
                     style={
                       active
                         ? {
                             backgroundColor: ACCENT,
-                            borderColor: ACCENT,
                           }
                         : undefined
                     }
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="font-black">
-                        {cancha}
-                      </p>
-
-                      {enVivo > 0 && (
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{
-                            backgroundColor: active
-                              ? "#000"
-                              : ACCENT,
-                          }}
-                        />
-                      )}
-                    </div>
-
-                    <p className="text-xs opacity-70 sm:text-sm">
-                      {total} partidos hoy
-                    </p>
+                    {label}
                   </button>
                 );
               })}
             </div>
-
-            <button
-              onClick={() => setVerTodas(!verTodas)}
-              className={`mt-4 w-full rounded-2xl border px-4 py-3 text-sm font-bold transition ${
-                verTodas
-                  ? "text-black"
-                  : "border-white/10 bg-black/30 text-white hover:border-white/40"
-              }`}
-              style={
-                verTodas
-                  ? {
-                      backgroundColor: ACCENT,
-                      borderColor: ACCENT,
-                    }
-                  : undefined
-              }
-            >
-              {verTodas
-                ? "Viendo todas las canchas"
-                : "Ver todos los scores"}
-            </button>
           </div>
 
-          {/* SCORE TITLE */}
+          {/* RESULT COUNT */}
 
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div className="mb-3 flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-black">
-                {verTodas
-                  ? "Todos los scores"
-                  : canchaSeleccionada}
+              <h3 className="text-lg font-black">
+                {filtroEstado === "En juego"
+                  ? "Partidos en vivo"
+                  : filtroEstado === "Pendiente"
+                  ? "Próximos partidos"
+                  : filtroEstado === "Terminado"
+                  ? "Resultados"
+                  : "Partidos"}
               </h3>
 
-              <p className="text-sm text-zinc-400">
-                {cargando
-                  ? "Cargando..."
-                  : "Live Score"}
+              <p className="text-xs text-zinc-500">
+                {cargando ? "Actualizando..." : "Actualización en tiempo real"}
               </p>
             </div>
 
-            <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
-              {partidosMostrados.length} partidos
+            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-600">
+              {partidosMostrados.length}
             </span>
           </div>
 
           {/* EMPTY */}
 
-          {partidosMostrados.length === 0 &&
-            !cargando && (
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 text-zinc-400">
-                No hay score disponible en este momento.
-              </div>
-            )}
+          {partidosMostrados.length === 0 && !cargando && (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+              <p className="font-bold text-zinc-700">
+                No hay partidos disponibles.
+              </p>
+              <p className="mt-1 text-sm text-zinc-400">
+                Prueba otra cancha o filtro.
+              </p>
+            </div>
+          )}
 
-          {/* MATCHES */}
+          {/* MATCH GRID */}
 
-          <div className="grid gap-4">
+          <div className="grid gap-3 lg:grid-cols-2">
             {partidosMostrados.map((partido) => (
               <article
                 key={partido.id}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] shadow-xl"
+                className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${
+                  partido.status === "En juego"
+                    ? "border-[#3FCD31]/40"
+                    : "border-zinc-200"
+                }`}
               >
-                {/* MATCH INFO */}
+                {/* MATCH HEADER */}
 
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{
-                          backgroundColor:
-                            partido.status === "En juego"
-                              ? ACCENT
-                              : partido.status === "Pendiente"
-                              ? "#FACC15"
-                              : "#A1A1AA",
-                        }}
-                      />
+                <div className="border-b border-zinc-100 px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                        <StatusBadge status={partido.status} />
 
-                      <span
-                        className="text-xs font-bold uppercase tracking-[0.2em]"
-                        style={{
-                          color:
-                            partido.status === "En juego"
-                              ? ACCENT
-                              : undefined,
-                        }}
-                      >
-                        {partido.status}
-                      </span>
+                        <span className="text-xs font-bold text-zinc-400">
+                          {partido.cancha}
+                        </span>
+
+                        {partido.match_time && (
+                          <>
+                            <span className="text-zinc-300">•</span>
+                            <span className="text-xs font-bold text-zinc-400">
+                              {partido.match_time}
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      <h4 className="truncate text-base font-black text-black sm:text-lg">
+                        {partido.tournament}
+                      </h4>
+
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {partido.category ? `${partido.category} · ` : ""}
+                        {partido.round}
+                      </p>
                     </div>
-
-                    <h4 className="text-lg font-black sm:text-xl md:text-2xl">
-                      {partido.tournament}
-                    </h4>
-
-                    <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                      {partido.category
-                        ? `${partido.category} · `
-                        : ""}
-
-                      {partido.round} ·{" "}
-                      {partido.match_time}
-                    </p>
                   </div>
-
-                  <span
-                    className="shrink-0 rounded-full border px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm"
-                    style={{
-                      borderColor: `${ACCENT}66`,
-                      backgroundColor: `${ACCENT}1A`,
-                      color: ACCENT,
-                    }}
-                  >
-                    {partido.cancha}
-                  </span>
                 </div>
-
-                {/* SCORE */}
 
                 <LiveScoreCard partido={partido} />
 
-                {/* STREAM */}
-
-                <div className="flex flex-wrap gap-3 border-t border-white/10 p-3">
+                <div className="border-t border-zinc-100 px-3 py-3">
                   <StreamButton partido={partido} />
                 </div>
               </article>
@@ -556,59 +518,67 @@ export default function LiveScorePage() {
   );
 }
 
-function LiveScoreCard({
-  partido,
-}: {
-  partido: Partido;
-}) {
+function StatusBadge({ status }: { status: EstadoPartido }) {
+  if (status === "En juego") {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]"
+        style={{
+          backgroundColor: `${ACCENT}1F`,
+          color: "#279C1F",
+        }}
+      >
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: ACCENT }}
+        />
+        Live
+      </span>
+    );
+  }
+
+  if (status === "Pendiente") {
+    return (
+      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-600">
+        Próximo
+      </span>
+    );
+  }
+
+  return (
+    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500">
+      Final
+    </span>
+  );
+}
+
+function LiveScoreCard({ partido }: { partido: Partido }) {
   const sport = partido.sport || "padel";
-  const activeSetIndex =
-    getActiveSetIndex(partido);
+  const activeSetIndex = getActiveSetIndex(partido);
 
   const columns =
     sport === "padel"
       ? [
-          {
-            label: "S1",
-            index: 0,
-          },
-          {
-            label: "S2",
-            index: 1,
-          },
-          {
-            label: getPadelThirdLabel(partido),
-            index: 2,
-          },
-          {
-            label: "GAME",
-            index: -1,
-          },
+          { label: "S1", index: 0 },
+          { label: "S2", index: 1 },
+          { label: getPadelThirdLabel(partido), index: 2 },
+          { label: "GAME", index: -1 },
         ]
       : [
-          {
-            label: "S1",
-            index: 0,
-          },
-          {
-            label: "S2",
-            index: 1,
-          },
-          {
-            label: "S3",
-            index: 2,
-          },
+          { label: "S1", index: 0 },
+          { label: "S2", index: 1 },
+          { label: "S3", index: 2 },
         ];
 
   return (
     <div>
-      {/* COLUMN HEADERS */}
+      {/* HEADERS */}
 
       <div
-        className={`grid gap-1 border-b border-white/10 px-3 py-2 text-[9px] uppercase tracking-[0.14em] text-zinc-500 sm:gap-2 sm:text-[10px] sm:tracking-[0.18em] ${
+        className={`grid items-center gap-1 border-b border-zinc-100 bg-zinc-50 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.12em] text-zinc-400 ${
           sport === "padel"
-            ? "grid-cols-[minmax(0,1fr)_30px_30px_30px_44px] sm:grid-cols-[minmax(0,1fr)_38px_38px_38px_52px]"
-            : "grid-cols-[minmax(0,1fr)_32px_32px_32px] sm:grid-cols-[minmax(0,1fr)_38px_38px_38px]"
+            ? "grid-cols-[minmax(0,1fr)_28px_28px_28px_42px] sm:grid-cols-[minmax(0,1fr)_34px_34px_34px_48px]"
+            : "grid-cols-[minmax(0,1fr)_32px_32px_32px]"
         }`}
       >
         <div>Equipo</div>
@@ -618,11 +588,8 @@ function LiveScoreCard({
             key={col.label}
             className="text-center"
             style={
-              col.index === activeSetIndex ||
-              col.index === -1
-                ? {
-                    color: ACCENT,
-                  }
+              col.index === activeSetIndex || col.index === -1
+                ? { color: "#279C1F" }
                 : undefined
             }
           >
@@ -631,16 +598,12 @@ function LiveScoreCard({
         ))}
       </div>
 
-      {/* SCORE ROWS */}
-
-      <div className="space-y-2 p-3">
+      <div className="divide-y divide-zinc-100">
         <ScoreRow
           sport={sport}
           name={partido.team_a}
           serving={partido.serving === "A"}
-          sets={partido.sets.map(
-            (s) => s.a
-          )}
+          sets={partido.sets.map((s) => s.a)}
           liveGame={partido.game_a}
           activeSetIndex={activeSetIndex}
         />
@@ -649,30 +612,20 @@ function LiveScoreCard({
           sport={sport}
           name={partido.team_b}
           serving={partido.serving === "B"}
-          sets={partido.sets.map(
-            (s) => s.b
-          )}
+          sets={partido.sets.map((s) => s.b)}
           liveGame={partido.game_b}
           activeSetIndex={activeSetIndex}
         />
       </div>
 
-      {/* SERVING */}
-
-      <div className="border-t border-white/10 px-4 pb-4 pt-1 text-[11px] text-zinc-400 sm:text-xs">
+      <div className="bg-zinc-50 px-4 py-2.5 text-[11px] text-zinc-500">
         Sacando:{" "}
-        <span className="font-bold text-white">
-          {partido.serving === "A"
-            ? partido.team_a
-            : partido.team_b}
+        <span className="font-black text-zinc-800">
+          {partido.serving === "A" ? partido.team_a : partido.team_b}
         </span>
 
         {sport === "pickleball" && (
-          <>
-            {" "}
-            · Servidor{" "}
-            {partido.server_number || 1}
-          </>
+          <> · Servidor {partido.server_number || 1}</>
         )}
       </div>
     </div>
@@ -696,78 +649,52 @@ function ScoreRow({
 }) {
   const values =
     sport === "padel"
-      ? [
-          sets[0] ?? "0",
-          sets[1] ?? "0",
-          sets[2] ?? "-",
-          liveGame || "0",
-        ]
+      ? [sets[0] ?? "0", sets[1] ?? "0", sets[2] ?? "-", liveGame || "0"]
       : [
-          activeSetIndex === 0
-            ? liveGame ||
-              sets[0] ||
-              "0"
-            : sets[0] ?? "0",
-
-          activeSetIndex === 1
-            ? liveGame ||
-              sets[1] ||
-              "0"
-            : sets[1] ?? "0",
-
-          activeSetIndex === 2
-            ? liveGame ||
-              sets[2] ||
-              "0"
-            : sets[2] ?? "0",
+          activeSetIndex === 0 ? liveGame || sets[0] || "0" : sets[0] ?? "0",
+          activeSetIndex === 1 ? liveGame || sets[1] || "0" : sets[1] ?? "0",
+          activeSetIndex === 2 ? liveGame || sets[2] || "0" : sets[2] ?? "0",
         ];
 
   return (
     <div
-      className={`grid items-center gap-1 rounded-2xl bg-black/40 px-2.5 py-3 sm:gap-2 sm:px-3 ${
+      className={`grid min-h-[54px] items-center gap-1 px-3 py-2.5 ${
         sport === "padel"
-          ? "grid-cols-[minmax(0,1fr)_30px_30px_30px_44px] sm:grid-cols-[minmax(0,1fr)_38px_38px_38px_52px]"
-          : "grid-cols-[minmax(0,1fr)_32px_32px_32px] sm:grid-cols-[minmax(0,1fr)_38px_38px_38px]"
+          ? "grid-cols-[minmax(0,1fr)_28px_28px_28px_42px] sm:grid-cols-[minmax(0,1fr)_34px_34px_34px_48px]"
+          : "grid-cols-[minmax(0,1fr)_32px_32px_32px]"
       }`}
     >
-      {/* TEAM NAME */}
-
       <div className="flex min-w-0 items-center gap-1.5 pr-1">
         <span
           className="h-2 w-2 shrink-0 rounded-full"
           style={{
-            backgroundColor: serving
-              ? ACCENT
-              : "transparent",
+            backgroundColor: serving ? ACCENT : "transparent",
           }}
         />
 
-        <span className="min-w-0 break-words text-[11px] font-bold leading-[1.15] sm:text-[13px] md:text-sm">
+        <span className="min-w-0 break-words text-[11px] font-bold leading-[1.15] text-zinc-800 sm:text-xs">
           {name}
         </span>
       </div>
 
-      {/* SCORES */}
-
       {values.map((value, index) => {
-        const isGameCol =
-          sport === "padel" &&
-          index === 3;
-
-        const isActiveSet =
-          index === activeSetIndex;
+        const isGameCol = sport === "padel" && index === 3;
+        const isActiveSet = index === activeSetIndex;
 
         return (
           <div
             key={index}
-            className="text-center text-sm font-black sm:text-base"
+            className={`text-center font-black ${
+              isGameCol ? "text-base sm:text-lg" : "text-sm sm:text-base"
+            }`}
             style={
-              isGameCol ||
-              isActiveSet
+              isGameCol || isActiveSet
                 ? {
-                    color: ACCENT,
+                    color: "#279C1F",
                   }
-                : undefined
+                : {
+                    color: DARK,
+                  }
             }
           >
             {value}
@@ -778,95 +705,47 @@ function ScoreRow({
   );
 }
 
-function getYoutubeEmbedUrl(
-  url?: string
-) {
+function getYoutubeEmbedUrl(url?: string) {
   if (!url) return "";
 
-  const normalMatch =
-    url.match(/[?&]v=([^&]+)/);
-
-  const shortMatch =
-    url.match(
-      /youtu\.be\/([^?&]+)/
-    );
-
-  const liveMatch =
-    url.match(
-      /youtube\.com\/live\/([^?&]+)/
-    );
-
-  const embedMatch =
-    url.match(
-      /youtube\.com\/embed\/([^?&]+)/
-    );
+  const normalMatch = url.match(/[?&]v=([^&]+)/);
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  const liveMatch = url.match(/youtube\.com\/live\/([^?&]+)/);
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
 
   const videoId =
-    normalMatch?.[1] ||
-    shortMatch?.[1] ||
-    liveMatch?.[1] ||
-    embedMatch?.[1];
+    normalMatch?.[1] || shortMatch?.[1] || liveMatch?.[1] || embedMatch?.[1];
 
   if (!videoId) return "";
 
   return `https://www.youtube.com/embed/${videoId}`;
 }
 
-function getYoutubeWatchUrl(
-  url?: string
-) {
+function getYoutubeWatchUrl(url?: string) {
   if (!url) return "";
 
-  const normalMatch =
-    url.match(/[?&]v=([^&]+)/);
-
-  const shortMatch =
-    url.match(
-      /youtu\.be\/([^?&]+)/
-    );
-
-  const liveMatch =
-    url.match(
-      /youtube\.com\/live\/([^?&]+)/
-    );
-
-  const embedMatch =
-    url.match(
-      /youtube\.com\/embed\/([^?&]+)/
-    );
+  const normalMatch = url.match(/[?&]v=([^&]+)/);
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  const liveMatch = url.match(/youtube\.com\/live\/([^?&]+)/);
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
 
   const videoId =
-    normalMatch?.[1] ||
-    shortMatch?.[1] ||
-    liveMatch?.[1] ||
-    embedMatch?.[1];
+    normalMatch?.[1] || shortMatch?.[1] || liveMatch?.[1] || embedMatch?.[1];
 
   if (!videoId) return url;
 
   return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
-function StreamButton({
-  partido,
-}: {
-  partido: Partido;
-}) {
-  const [open, setOpen] =
-    useState(false);
+function StreamButton({ partido }: { partido: Partido }) {
+  const [open, setOpen] = useState(false);
 
-  const embedUrl =
-    getYoutubeEmbedUrl(
-      partido.stream_url
-    );
-
-  const watchUrl =
-    getYoutubeWatchUrl(
-      partido.stream_url
-    );
+  const embedUrl = getYoutubeEmbedUrl(partido.stream_url);
+  const watchUrl = getYoutubeWatchUrl(partido.stream_url);
 
   if (!embedUrl) {
     return (
-      <button className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-500">
+      <button className="rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-bold text-zinc-400">
         Streaming · Próximamente
       </button>
     );
@@ -875,22 +754,14 @@ function StreamButton({
   return (
     <div className="w-full">
       <button
-        onClick={() =>
-          setOpen(!open)
-        }
-        className="rounded-full border px-4 py-2 text-sm font-bold"
-        style={{
-          borderColor: "#ef4444",
-          color: "#ef4444",
-        }}
+        onClick={() => setOpen(!open)}
+        className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-600"
       >
-        {open
-          ? "Cerrar live"
-          : "🔴 Ver en vivo"}
+        {open ? "Cerrar live" : "● Ver en vivo"}
       </button>
 
       {open && (
-        <div className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-black">
+        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-black">
           <iframe
             src={embedUrl}
             className="aspect-video w-full"
@@ -902,7 +773,7 @@ function StreamButton({
             href={watchUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block border-t border-white/10 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+            className="block border-t border-white/10 px-4 py-3 text-center text-xs font-bold text-white"
           >
             Ver en pantalla grande
           </a>
