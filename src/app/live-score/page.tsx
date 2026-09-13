@@ -74,7 +74,10 @@ function isSetCompletePadel(set: { a: string; b: string }) {
   const b = toNumber(set.b);
 
   if ((a === 7 && b === 6) || (a === 6 && b === 7)) return true;
-  if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2) return true;
+
+  if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2) {
+    return true;
+  }
 
   return false;
 }
@@ -95,7 +98,9 @@ function getActiveSetIndex(partido: Partido) {
       : !isSetCompletePadel(set)
   );
 
-  if (index === -1) return partido.sets.length - 1;
+  if (index === -1) {
+    return partido.sets.length - 1;
+  }
 
   return index;
 }
@@ -103,6 +108,66 @@ function getActiveSetIndex(partido: Partido) {
 function getPadelThirdLabel(partido: Partido) {
   return partido.third_set_mode === "Super tiebreak" ? "ST" : "S3";
 }
+
+/* =========================================
+   CLUB LOGO
+========================================= */
+
+function ClubLogo({
+  club,
+}: {
+  club: ScoreClub;
+}) {
+  /*
+   * UPADEL
+   * Imagen completa, sin fondo negro visible.
+   */
+  if (club.name === "Upadel") {
+    return (
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm sm:h-24 sm:w-24">
+        <img
+          src={club.logo_url}
+          alt={club.name}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  /*
+   * GARANA
+   * Fondo negro + logo más grande.
+   */
+  if (club.name === "Garana Padel") {
+    return (
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black p-1 shadow-sm sm:h-24 sm:w-24">
+        <img
+          src={club.logo_url}
+          alt={club.name}
+          className="h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  /*
+   * SAQUE
+   * Se mantiene con fondo negro y padding.
+   */
+  return (
+    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black p-3 shadow-sm sm:h-24 sm:w-24">
+      <img
+        src={club.logo_url}
+        alt={club.name}
+        className="max-h-full max-w-full object-contain"
+      />
+    </div>
+  );
+}
+
+/* =========================================
+   MAIN PAGE
+========================================= */
 
 export default function LiveScorePage() {
   const [clubSeleccionado, setClubSeleccionado] =
@@ -118,6 +183,9 @@ export default function LiveScorePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cargando, setCargando] = useState(true);
 
+  /*
+   * PARTIDOS DEL CLUB
+   */
   const partidosClub = useMemo(() => {
     return partidos.filter(
       (partido) =>
@@ -127,6 +195,9 @@ export default function LiveScorePage() {
     );
   }, [partidos, clubSeleccionado]);
 
+  /*
+   * PARTIDOS FILTRADOS
+   */
   const partidosMostrados = useMemo(() => {
     let lista = [...partidosClub];
 
@@ -164,6 +235,9 @@ export default function LiveScorePage() {
     });
   }, [partidosClub, canchaSeleccionada, filtroEstado]);
 
+  /*
+   * SUPABASE REALTIME
+   */
   useEffect(() => {
     cargarPartidos();
 
@@ -191,7 +265,9 @@ export default function LiveScorePage() {
     const { data, error } = await supabase
       .from("live_matches")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (!error) {
       setPartidos((data || []) as Partido[]);
@@ -203,9 +279,13 @@ export default function LiveScorePage() {
   return (
     <main
       className="min-h-screen text-[#111411]"
-      style={{ backgroundColor: SOFT_BG }}
+      style={{
+        backgroundColor: SOFT_BG,
+      }}
     >
-      {/* HEADER */}
+      {/* =====================================
+          HEADER
+      ====================================== */}
 
       <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-5">
@@ -220,7 +300,9 @@ export default function LiveScorePage() {
             <div>
               <p
                 className="text-[10px] font-black uppercase tracking-[0.28em]"
-                style={{ color: ACCENT }}
+                style={{
+                  color: ACCENT,
+                }}
               >
                 {clubSeleccionado?.name || "RECAP"}
               </p>
@@ -239,6 +321,8 @@ export default function LiveScorePage() {
             />
           </Link>
         </div>
+
+        {/* MENU */}
 
         {menuOpen && (
           <div className="border-t border-zinc-200 bg-white">
@@ -271,14 +355,18 @@ export default function LiveScorePage() {
         )}
       </header>
 
-      {/* CLUB SELECTION */}
+      {/* =====================================
+          CLUB SELECTION
+      ====================================== */}
 
       {!clubSeleccionado && (
         <section className="mx-auto max-w-7xl px-4 py-7 sm:px-5 sm:py-10">
           <div className="mb-7">
             <p
               className="mb-2 text-xs font-black uppercase tracking-[0.22em]"
-              style={{ color: ACCENT }}
+              style={{
+                color: ACCENT,
+              }}
             >
               RECAP LIVE
             </p>
@@ -304,15 +392,7 @@ export default function LiveScorePage() {
                 className="rounded-3xl border border-zinc-200 bg-white p-4 text-left shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg sm:p-5"
               >
                 <div className="flex items-center gap-4">
-                  {/* BLACK LOGO BOX */}
-
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-black p-3 shadow-sm sm:h-24 sm:w-24">
-                    <img
-                      src={club.logo_url}
-                      alt={club.name}
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
+                  <ClubLogo club={club} />
 
                   <div className="min-w-0">
                     <p className="text-lg font-black leading-tight text-black sm:text-xl">
@@ -328,7 +408,9 @@ export default function LiveScorePage() {
                     <div className="mt-3 flex items-center gap-1.5">
                       <span
                         className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: ACCENT }}
+                        style={{
+                          backgroundColor: ACCENT,
+                        }}
                       />
 
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500">
@@ -343,34 +425,32 @@ export default function LiveScorePage() {
         </section>
       )}
 
-      {/* SELECTED CLUB */}
+      {/* =====================================
+          SELECTED CLUB
+      ====================================== */}
 
       {clubSeleccionado && (
         <section className="mx-auto max-w-7xl px-4 py-5 sm:px-5 sm:py-7">
-          {/* PREMIUM CLUB CARD */}
+          {/* CLUB CARD */}
 
           <div className="mb-5 rounded-3xl border border-zinc-200 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)] sm:p-5">
             <div className="flex items-center gap-4">
-              {/* LARGE CLUB LOGO */}
-
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-black p-3 shadow-sm sm:h-24 sm:w-24">
-                <img
-                  src={clubSeleccionado.logo_url}
-                  alt={clubSeleccionado.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              </div>
+              <ClubLogo club={clubSeleccionado} />
 
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-1.5">
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: ACCENT }}
+                    style={{
+                      backgroundColor: ACCENT,
+                    }}
                   />
 
                   <p
                     className="text-[9px] font-black uppercase tracking-[0.18em] sm:text-[10px]"
-                    style={{ color: "#279C1F" }}
+                    style={{
+                      color: "#279C1F",
+                    }}
                   >
                     ReCap Live
                   </p>
@@ -398,7 +478,9 @@ export default function LiveScorePage() {
             </div>
           </div>
 
-          {/* STATUS FILTERS */}
+          {/* =====================================
+              STATUS FILTERS
+          ====================================== */}
 
           <div className="mb-3">
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
@@ -421,7 +503,7 @@ export default function LiveScorePage() {
                       setFiltroEstado(estado);
                       setCanchaSeleccionada(null);
                     }}
-                    className={`flex min-h-[42px] min-w-0 items-center justify-center rounded-xl px-1.5 py-2 text-[10px] font-black transition sm:px-3 sm:text-xs ${
+                    className={`flex min-h-[42px] min-w-0 items-center justify-center rounded-xl px-1 py-2 text-[10px] font-black transition sm:px-3 sm:text-xs ${
                       active
                         ? "bg-black text-white shadow-sm"
                         : "border border-zinc-200 bg-white text-zinc-600"
@@ -431,7 +513,9 @@ export default function LiveScorePage() {
                       <span className="flex items-center justify-center gap-1">
                         <span
                           className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: ACCENT }}
+                          style={{
+                            backgroundColor: ACCENT,
+                          }}
                         />
 
                         <span>Live</span>
@@ -449,14 +533,18 @@ export default function LiveScorePage() {
             </div>
           </div>
 
-          {/* COURTS - ALWAYS 4 COLUMNS ON MOBILE */}
+          {/* =====================================
+              COURTS
+          ====================================== */}
 
           <div className="mb-6">
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
               {CANCHAS.map((cancha) => {
-                const active = canchaSeleccionada === cancha;
+                const active =
+                  canchaSeleccionada === cancha;
 
-                const label = cancha.replace("Cancha ", "C");
+                const label =
+                  cancha.replace("Cancha ", "C");
 
                 return (
                   <button
@@ -486,7 +574,9 @@ export default function LiveScorePage() {
             </div>
           </div>
 
-          {/* MATCH SECTION HEADER */}
+          {/* =====================================
+              MATCH SECTION HEADER
+          ====================================== */}
 
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-black tracking-tight">
@@ -502,25 +592,30 @@ export default function LiveScorePage() {
             </h3>
 
             <span className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-600">
-              {cargando ? "..." : partidosMostrados.length}
+              {cargando
+                ? "..."
+                : partidosMostrados.length}
             </span>
           </div>
 
-          {/* EMPTY STATE */}
+          {/* EMPTY */}
 
-          {partidosMostrados.length === 0 && !cargando && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
-              <p className="font-bold text-zinc-700">
-                No hay partidos disponibles.
-              </p>
+          {partidosMostrados.length === 0 &&
+            !cargando && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+                <p className="font-bold text-zinc-700">
+                  No hay partidos disponibles.
+                </p>
 
-              <p className="mt-1 text-sm text-zinc-400">
-                Prueba otra cancha o filtro.
-              </p>
-            </div>
-          )}
+                <p className="mt-1 text-sm text-zinc-400">
+                  Prueba otra cancha o filtro.
+                </p>
+              </div>
+            )}
 
-          {/* MATCHES */}
+          {/* =====================================
+              MATCH GRID
+          ====================================== */}
 
           <div className="grid gap-3 lg:grid-cols-2">
             {partidosMostrados.map((partido) => (
@@ -532,13 +627,15 @@ export default function LiveScorePage() {
                     : "border-zinc-200"
                 }`}
               >
-                {/* MATCH INFO */}
+                {/* MATCH HEADER */}
 
                 <div className="border-b border-zinc-100 px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                        <StatusBadge status={partido.status} />
+                        <StatusBadge
+                          status={partido.status}
+                        />
 
                         <span className="text-xs font-bold text-zinc-400">
                           {partido.cancha}
@@ -546,7 +643,9 @@ export default function LiveScorePage() {
 
                         {partido.match_time && (
                           <>
-                            <span className="text-zinc-300">•</span>
+                            <span className="text-zinc-300">
+                              •
+                            </span>
 
                             <span className="text-xs font-bold text-zinc-400">
                               {partido.match_time}
@@ -572,12 +671,16 @@ export default function LiveScorePage() {
 
                 {/* SCORE */}
 
-                <LiveScoreCard partido={partido} />
+                <LiveScoreCard
+                  partido={partido}
+                />
 
                 {/* STREAM */}
 
                 <div className="border-t border-zinc-100 px-3 py-3">
-                  <StreamButton partido={partido} />
+                  <StreamButton
+                    partido={partido}
+                  />
                 </div>
               </article>
             ))}
@@ -608,7 +711,9 @@ function StatusBadge({
       >
         <span
           className="h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: ACCENT }}
+          style={{
+            backgroundColor: ACCENT,
+          }}
         />
 
         Live
@@ -640,9 +745,11 @@ function LiveScoreCard({
 }: {
   partido: Partido;
 }) {
-  const sport = partido.sport || "padel";
+  const sport =
+    partido.sport || "padel";
 
-  const activeSetIndex = getActiveSetIndex(partido);
+  const activeSetIndex =
+    getActiveSetIndex(partido);
 
   const columns =
     sport === "padel"
@@ -656,7 +763,8 @@ function LiveScoreCard({
             index: 1,
           },
           {
-            label: getPadelThirdLabel(partido),
+            label:
+              getPadelThirdLabel(partido),
             index: 2,
           },
           {
@@ -681,7 +789,7 @@ function LiveScoreCard({
 
   return (
     <div>
-      {/* SCORE HEADERS */}
+      {/* SCORE HEADER */}
 
       <div
         className={`grid items-center gap-1 border-b border-zinc-100 bg-zinc-50/80 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.1em] text-zinc-400 ${
@@ -697,7 +805,8 @@ function LiveScoreCard({
             key={col.label}
             className="text-center"
             style={
-              col.index === activeSetIndex ||
+              col.index ===
+                activeSetIndex ||
               col.index === -1
                 ? {
                     color: "#279C1F",
@@ -710,25 +819,37 @@ function LiveScoreCard({
         ))}
       </div>
 
-      {/* TEAM ROWS */}
+      {/* TEAMS */}
 
       <div className="divide-y divide-zinc-100">
         <ScoreRow
           sport={sport}
           name={partido.team_a}
-          serving={partido.serving === "A"}
-          sets={partido.sets.map((s) => s.a)}
+          serving={
+            partido.serving === "A"
+          }
+          sets={partido.sets.map(
+            (s) => s.a
+          )}
           liveGame={partido.game_a}
-          activeSetIndex={activeSetIndex}
+          activeSetIndex={
+            activeSetIndex
+          }
         />
 
         <ScoreRow
           sport={sport}
           name={partido.team_b}
-          serving={partido.serving === "B"}
-          sets={partido.sets.map((s) => s.b)}
+          serving={
+            partido.serving === "B"
+          }
+          sets={partido.sets.map(
+            (s) => s.b
+          )}
           liveGame={partido.game_b}
-          activeSetIndex={activeSetIndex}
+          activeSetIndex={
+            activeSetIndex
+          }
         />
       </div>
 
@@ -745,7 +866,8 @@ function LiveScoreCard({
         {sport === "pickleball" && (
           <>
             {" "}
-            · Servidor {partido.server_number || 1}
+            · Servidor{" "}
+            {partido.server_number || 1}
           </>
         )}
       </div>
@@ -782,15 +904,21 @@ function ScoreRow({
         ]
       : [
           activeSetIndex === 0
-            ? liveGame || sets[0] || "0"
+            ? liveGame ||
+              sets[0] ||
+              "0"
             : sets[0] ?? "0",
 
           activeSetIndex === 1
-            ? liveGame || sets[1] || "0"
+            ? liveGame ||
+              sets[1] ||
+              "0"
             : sets[1] ?? "0",
 
           activeSetIndex === 2
-            ? liveGame || sets[2] || "0"
+            ? liveGame ||
+              sets[2] ||
+              "0"
             : sets[2] ?? "0",
         ];
 
@@ -802,7 +930,7 @@ function ScoreRow({
           : "grid-cols-[minmax(0,1fr)_32px_32px_32px]"
       }`}
     >
-      {/* TEAM NAME */}
+      {/* TEAM */}
 
       <div className="flex min-w-0 items-center gap-1.5 pr-1">
         <span
@@ -821,35 +949,41 @@ function ScoreRow({
 
       {/* SCORES */}
 
-      {values.map((value, index) => {
-        const isGameCol =
-          sport === "padel" && index === 3;
+      {values.map(
+        (value, index) => {
+          const isGameCol =
+            sport === "padel" &&
+            index === 3;
 
-        const isActiveSet =
-          index === activeSetIndex;
+          const isActiveSet =
+            index ===
+            activeSetIndex;
 
-        return (
-          <div
-            key={index}
-            className={`text-center font-black ${
-              isGameCol
-                ? "text-base sm:text-lg"
-                : "text-sm sm:text-base"
-            }`}
-            style={
-              isGameCol || isActiveSet
-                ? {
-                    color: "#279C1F",
-                  }
-                : {
-                    color: DARK,
-                  }
-            }
-          >
-            {value}
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={index}
+              className={`text-center font-black ${
+                isGameCol
+                  ? "text-base sm:text-lg"
+                  : "text-sm sm:text-base"
+              }`}
+              style={
+                isGameCol ||
+                isActiveSet
+                  ? {
+                      color:
+                        "#279C1F",
+                    }
+                  : {
+                      color: DARK,
+                    }
+              }
+            >
+              {value}
+            </div>
+          );
+        }
+      )}
     </div>
   );
 }
@@ -858,20 +992,28 @@ function ScoreRow({
    YOUTUBE HELPERS
 ========================================= */
 
-function getYoutubeEmbedUrl(url?: string) {
+function getYoutubeEmbedUrl(
+  url?: string
+) {
   if (!url) return "";
 
   const normalMatch =
     url.match(/[?&]v=([^&]+)/);
 
   const shortMatch =
-    url.match(/youtu\.be\/([^?&]+)/);
+    url.match(
+      /youtu\.be\/([^?&]+)/
+    );
 
   const liveMatch =
-    url.match(/youtube\.com\/live\/([^?&]+)/);
+    url.match(
+      /youtube\.com\/live\/([^?&]+)/
+    );
 
   const embedMatch =
-    url.match(/youtube\.com\/embed\/([^?&]+)/);
+    url.match(
+      /youtube\.com\/embed\/([^?&]+)/
+    );
 
   const videoId =
     normalMatch?.[1] ||
@@ -884,20 +1026,28 @@ function getYoutubeEmbedUrl(url?: string) {
   return `https://www.youtube.com/embed/${videoId}`;
 }
 
-function getYoutubeWatchUrl(url?: string) {
+function getYoutubeWatchUrl(
+  url?: string
+) {
   if (!url) return "";
 
   const normalMatch =
     url.match(/[?&]v=([^&]+)/);
 
   const shortMatch =
-    url.match(/youtu\.be\/([^?&]+)/);
+    url.match(
+      /youtu\.be\/([^?&]+)/
+    );
 
   const liveMatch =
-    url.match(/youtube\.com\/live\/([^?&]+)/);
+    url.match(
+      /youtube\.com\/live\/([^?&]+)/
+    );
 
   const embedMatch =
-    url.match(/youtube\.com\/embed\/([^?&]+)/);
+    url.match(
+      /youtube\.com\/embed\/([^?&]+)/
+    );
 
   const videoId =
     normalMatch?.[1] ||
@@ -905,7 +1055,9 @@ function getYoutubeWatchUrl(url?: string) {
     liveMatch?.[1] ||
     embedMatch?.[1];
 
-  if (!videoId) return url;
+  if (!videoId) {
+    return url;
+  }
 
   return `https://www.youtube.com/watch?v=${videoId}`;
 }
@@ -919,13 +1071,18 @@ function StreamButton({
 }: {
   partido: Partido;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] =
+    useState(false);
 
   const embedUrl =
-    getYoutubeEmbedUrl(partido.stream_url);
+    getYoutubeEmbedUrl(
+      partido.stream_url
+    );
 
   const watchUrl =
-    getYoutubeWatchUrl(partido.stream_url);
+    getYoutubeWatchUrl(
+      partido.stream_url
+    );
 
   if (!embedUrl) {
     return (
@@ -938,7 +1095,9 @@ function StreamButton({
   return (
     <div className="w-full">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() =>
+          setOpen(!open)
+        }
         className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-black text-red-600"
       >
         {open
