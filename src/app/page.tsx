@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, Menu, Play, Search, X, Zap } from "lucide-react";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31";
@@ -168,7 +169,7 @@ function StepPill({
   );
 }
 
-export default function Page() {
+export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -361,6 +362,179 @@ export default function Page() {
         <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-[34rem] rounded-full bg-white/10 blur-3xl" />
       </div>
 
+      {premiumTop ? (
+        <>
+          <header className="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/85 px-4 py-3 backdrop-blur-xl sm:px-6">
+            <div className="relative mx-auto flex max-w-7xl items-center justify-between">
+              <a href="#top" aria-label="Ir al inicio" className="relative z-10">
+                <img
+                  src="/RecapLogo.png"
+                  alt="Recap"
+                  className="h-11 w-auto rounded-lg bg-white px-2 object-contain sm:h-12"
+                />
+              </a>
+
+              <nav className="hidden items-center gap-7 text-sm font-medium text-white/70 md:flex">
+                <a href="#que-es" className="transition hover:text-white">
+                  ¿Qué es Recap?
+                </a>
+                <a href="#video" className="transition hover:text-white">
+                  Ver en acción
+                </a>
+                <a
+                  href="/live-score"
+                  className="transition hover:text-white"
+                >
+                  Score en Vivo
+                </a>
+              </nav>
+
+              <a
+                href="#buscar"
+                className="hidden items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-zinc-950 transition hover:scale-[1.02] md:flex"
+                style={{ background: ACCENT }}
+              >
+                <Search size={16} strokeWidth={2.5} />
+                Buscar clips
+              </a>
+
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-white md:hidden"
+                aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
+
+            {menuOpen && (
+              <nav className="mx-auto mt-3 grid max-w-7xl gap-2 border-t border-white/10 pt-3 md:hidden">
+                <a
+                  href="#buscar"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between rounded-2xl bg-white px-4 py-3.5 font-bold text-zinc-950"
+                >
+                  Buscar mis clips <Search size={18} />
+                </a>
+                <a
+                  href="#que-es"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 font-semibold text-white"
+                >
+                  ¿Qué es Recap?
+                </a>
+                <a
+                  href="/live-score"
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 font-semibold text-white"
+                >
+                  Score en Vivo
+                </a>
+              </nav>
+            )}
+          </header>
+
+          <section className="relative overflow-hidden border-b border-white/10">
+            <div className="premium-grid pointer-events-none absolute inset-0 opacity-40" />
+            <div
+              className="pointer-events-none absolute left-1/2 top-0 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px] sm:h-[44rem] sm:w-[44rem]"
+              style={{ background: ACCENT + "38" }}
+            />
+
+            <Shell>
+              <div className="relative grid items-center gap-11 pb-16 pt-12 sm:pb-20 sm:pt-16 lg:grid-cols-[1.03fr_.97fr] lg:gap-16 lg:pb-24 lg:pt-24">
+                <div className="text-center lg:text-left">
+                  <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70 lg:mx-0">
+                    <span
+                      className="h-2 w-2 rounded-full shadow-[0_0_14px_currentColor]"
+                      style={{ color: ACCENT, background: ACCENT }}
+                    />
+                    Tu mejor punto. Listo para compartir.
+                  </div>
+
+                  <h1 className="mx-auto mt-6 max-w-3xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.055em] sm:text-6xl md:text-7xl lg:mx-0 lg:text-[5rem]">
+                    Tu jugada favorita
+                    <span className="block" style={{ color: ACCENT }}>
+                      en un Recap
+                    </span>
+                  </h1>
+
+                  <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/65 sm:text-lg lg:mx-0">
+                    Tecnología inteligente diseñada para canchas deportivas.
+                    Presiona un botón y guarda tus mejores jugadas.
+                  </p>
+
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                    <a
+                      href="#buscar"
+                      className="flex min-h-14 items-center justify-center gap-2 rounded-full px-7 text-base font-extrabold text-zinc-950 shadow-[0_12px_40px_rgba(63,205,49,.22)] transition hover:-translate-y-0.5"
+                      style={{ background: ACCENT }}
+                    >
+                      <Search size={19} strokeWidth={2.5} />
+                      Buscar mis clips
+                    </a>
+                    <a
+                      href="#que-es"
+                      className="flex min-h-14 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-7 text-base font-bold text-white transition hover:bg-white/10"
+                    >
+                      ¿Qué es Recap?
+                      <ArrowDown size={18} />
+                    </a>
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-center gap-5 text-xs font-semibold text-white/45 lg:justify-start">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Zap size={14} style={{ color: ACCENT }} />
+                      Últimos 45 segundos
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-white/20" />
+                    <span>Sin apps</span>
+                  </div>
+                </div>
+
+                <div id="video" className="relative mx-auto w-full max-w-xl scroll-mt-28">
+                  <div
+                    className="absolute -inset-3 rounded-[2rem] opacity-30 blur-2xl"
+                    style={{ background: ACCENT }}
+                  />
+                  <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-zinc-900 p-2 shadow-2xl shadow-black/50 sm:p-3">
+                    <div className="relative overflow-hidden rounded-[1.3rem] bg-black">
+                      <video
+                        src="/video3.mp4"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        className="aspect-[4/5] w-full object-cover sm:aspect-video lg:aspect-[4/5]"
+                        controls={false}
+                      />
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4 sm:bottom-5 sm:left-5 sm:right-5">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
+                            Recap en acción
+                          </div>
+                          <div className="mt-1 text-lg font-bold text-white">
+                            Presiona. Revive. Comparte.
+                          </div>
+                        </div>
+                        <div
+                          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-zinc-950"
+                          style={{ background: ACCENT }}
+                        >
+                          <Play size={18} fill="currentColor" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Shell>
+          </section>
+        </>
+      ) : (
+        <>
       <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white px-5 py-4">
         <div className="relative mx-auto flex max-w-7xl items-center justify-between">
           <button
@@ -469,6 +643,8 @@ export default function Page() {
           </div>
         </Shell>
       </section>
+        </>
+      )}
 
       <section id="experiencia" className="bg-zinc-100 text-zinc-950">
         <Shell>
@@ -898,4 +1074,8 @@ export default function Page() {
       </section>
     </main>
   );
+}
+
+export default function Page() {
+  return <HomePage />;
 }
