@@ -959,6 +959,11 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 <div className={premiumTop ? "mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"}>
                   {clubs.map((club) => {
                     const isSelected = selectedClub?.id === club.id;
+                    const normalizedClubName = club.name
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .toLowerCase();
+                    const isGarana = normalizedClubName.includes("garana");
 
                     return (
                       <button
@@ -966,7 +971,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         onClick={() => setSelectedClub(club)}
                         className={premiumTop
                           ? clsx(
-                              "group relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-2xl border bg-[#17181b] p-4 text-center text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[#1d1e21] sm:min-h-48 sm:p-5",
+                              "group relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-[1.4rem] border bg-gradient-to-b from-[#222326] to-[#131416] p-4 text-center text-white shadow-[0_16px_45px_rgba(0,0,0,.22)] transition duration-200 hover:-translate-y-0.5 hover:border-white/20 sm:min-h-48 sm:rounded-[1.65rem] sm:p-5",
                               isSelected ? "border-transparent" : "border-white/10"
                             )
                           : "rounded-3xl border border-white/10 bg-white/[0.07] p-4 text-left"}
@@ -981,11 +986,14 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         <div className={premiumTop ? "flex w-full flex-col items-center justify-center" : "flex items-center gap-3"}>
                           {club.logo_url && (
                             premiumTop ? (
-                              <div className="grid h-20 w-full place-items-center sm:h-24">
+                              <div className="grid h-20 w-full place-items-center overflow-hidden rounded-2xl sm:h-24 sm:rounded-[1.25rem]">
                                 <img
                                   src={club.logo_url}
                                   alt={club.name}
-                                  className="h-full max-h-20 w-full max-w-[8.5rem] object-contain sm:max-h-24"
+                                  className={clsx(
+                                    "h-full max-h-20 w-full max-w-[8.5rem] rounded-xl object-contain transition-transform duration-200 sm:max-h-24 sm:rounded-2xl",
+                                    isGarana ? "scale-[1.22]" : "scale-105"
+                                  )}
                                 />
                               </div>
                             ) : (
@@ -1253,5 +1261,5 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 }
 
 export default function Page() {
-  return <HomePage />;
+  return <HomePage premiumTop />;
 }
