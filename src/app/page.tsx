@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, Instagram, Menu, X } from "lucide-react";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31";
@@ -185,7 +185,6 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Smart technology built for sports courts. Press one button and save your best plays.",
         videoEyebrow: "Recap in action",
         videoTitle: "Your play, ready to share.",
-        followUs: "Follow us",
         findSeconds: "Find your clips in seconds.",
         step: "Step",
         court: "Court",
@@ -204,11 +203,15 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Clips are available only on the day you played. Download them before leaving the court.",
         how: "How does it work?",
         play: "1) Play",
-        playText: "Recap captures continuously for you.",
-        press: "2) Press the button",
-        pressText: "We save the last 45 seconds.",
+        playText: "Recap records continuously, 24/7.",
+        press: "2) Press the on-court button",
+        pressText: "The last 45 seconds are saved — your most recent play.",
         locate: "3) Find your clip",
-        locateText: "Club → Court → Time.",
+        locateText:
+          "Visit dalerecap.com, choose your club, court and time, then tap Find clips.",
+        share: "4) Download and share",
+        shareText:
+          "Download your clip, share it on social media and tag @dale.recap.",
         findHere: "Find your clips here",
         selection: "Your selection",
         chooseCourt: "choose a court",
@@ -238,7 +241,6 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Tecnología inteligente diseñada para canchas deportivas. Presiona un botón y guarda tus mejores jugadas.",
         videoEyebrow: "Recap en acción",
         videoTitle: "Tu jugada, lista para compartir.",
-        followUs: "Síguenos",
         findSeconds: "Encuentra tus clips en segundos.",
         step: "Paso",
         court: "Cancha",
@@ -257,11 +259,16 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Los clips están disponibles únicamente el día que jugaste. Descárgalos antes de salir de la cancha.",
         how: "¿Cómo funciona?",
         play: "1) Juega",
-        playText: "Recap captura continuamente por ti.",
-        press: "2) Presiona el botón",
-        pressText: "Guardamos los últimos 45 segundos.",
+        playText: "Recap graba de forma continua, 24/7.",
+        press: "2) Presiona el botón en cancha",
+        pressText:
+          "Se guardan los últimos 45 segundos: tu jugada más reciente.",
         locate: "3) Encuentra tu clip",
-        locateText: "Club → Cancha → Horario.",
+        locateText:
+          "Entra a dalerecap.com, elige club, cancha y horario, y presiona Buscar clips.",
+        share: "4) Descarga y comparte",
+        shareText:
+          "Descarga tu clip, compártelo en redes sociales y etiqueta a @dale.recap.",
         findHere: "Encuentra tus clips aquí",
         selection: "Tu selección",
         chooseCourt: "elige cancha",
@@ -653,15 +660,11 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                   href="https://www.instagram.com/dale.recap/"
                   target="_blank"
                   rel="noreferrer"
-                  className="group mx-auto mt-5 inline-flex items-center gap-2 text-xs font-normal text-white/50 transition hover:text-white sm:text-sm"
+                  aria-label="Instagram @dale.recap"
+                  className="group mx-auto mt-5 inline-flex items-center gap-2.5 text-xs font-normal text-white/70 transition hover:text-white sm:text-sm"
                 >
-                  {ui.followUs}
-                  <span className="text-white/85 transition group-hover:text-[#3FCD31]">
-                    @dale.recap
-                  </span>
-                  <span aria-hidden="true" className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
-                    ↗
-                  </span>
+                  <Instagram size={17} strokeWidth={1.7} aria-hidden="true" />
+                  <span className="text-white/90 transition group-hover:text-[#3FCD31]">@dale.recap</span>
                 </a>
               </div>
             </div>
@@ -780,25 +783,12 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         </>
       )}
 
-      <section
+      {!premiumTop && <section
         id="experiencia"
-        className={premiumTop ? "relative order-2 overflow-hidden bg-[#f7f9f6] text-zinc-950" : "bg-zinc-100 text-zinc-950"}
+        className="bg-zinc-100 text-zinc-950"
       >
-        {premiumTop && (
-          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <div
-              className="absolute -left-28 top-0 h-72 w-72 rounded-full blur-[100px]"
-              style={{ background: ACCENT + "24" }}
-            />
-            <div
-              className="absolute -right-28 bottom-0 h-80 w-80 rounded-full blur-[120px]"
-              style={{ background: ACCENT + "1F" }}
-            />
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#3FCD31]/45 to-transparent" />
-          </div>
-        )}
         <Shell>
-          <div className={premiumTop ? "relative py-20 md:py-28" : "py-14 md:py-16"}>
+          <div className="py-14 md:py-16">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <h2 className={premiumTop ? "max-w-xl text-3xl font-normal tracking-[-0.03em] sm:text-5xl" : "text-2xl font-bold sm:text-3xl"}>
                 {ui.findSeconds}
@@ -861,7 +851,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
             </div>
           </div>
         </Shell>
-      </section>
+      </section>}
 
       <section
         id="que-es"
@@ -913,6 +903,10 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       {
                         t: ui.locate,
                         d: ui.locateText,
+                      },
+                      {
+                        t: ui.share,
+                        d: ui.shareText,
                       },
                     ].map((s) => (
                       <div
@@ -1006,6 +1000,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       .replace(/[\u0300-\u036f]/g, "")
                       .toLowerCase();
                     const isGarana = normalizedClubName.includes("garana");
+                    const isSaque = normalizedClubName.includes("saque");
                     const isWideLogo =
                       normalizedClubName.includes("wild") ||
                       normalizedClubName.includes("yupa") ||
@@ -1051,7 +1046,9 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                                       ? "max-h-20 max-w-[8.5rem] scale-[1.32] sm:max-h-24"
                                       : isWideLogo
                                         ? "max-h-24 max-w-full scale-[1.1] sm:max-h-28"
-                                        : "max-h-20 max-w-[8.5rem] scale-105 sm:max-h-24"
+                                        : isSaque
+                                          ? "max-h-20 max-w-[8.5rem] scale-[0.94] sm:max-h-24"
+                                          : "max-h-20 max-w-[8.5rem] scale-105 sm:max-h-24"
                                   )}
                                 />
                               </div>
