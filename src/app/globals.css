@@ -11,11 +11,3 @@ body { font-feature-settings: "cv02","cv03","cv04","cv11"; }
   background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
   background-size: 22px 22px;
 }
-
-.premium-grid {
-  background-image:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, black, transparent 90%);
-}

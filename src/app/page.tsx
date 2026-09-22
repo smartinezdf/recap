@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, Menu, Play, Search, X, Zap } from "lucide-react";
+import { ArrowRight, Menu, Play, X } from "lucide-react";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31";
@@ -171,6 +171,109 @@ function StepPill({
 
 export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [language, setLanguage] = useState<"es" | "en">("es");
+
+  const ui = language === "en"
+    ? {
+        about: "What is Recap?",
+        demo: "See it in action",
+        liveScore: "Live Score",
+        findClips: "Find my clips",
+        heroTitle: "Your favorite play,",
+        heroAccent: "in one Recap.",
+        heroBody:
+          "Smart technology built for sports courts. Press one button and save your best plays.",
+        videoEyebrow: "Recap in action",
+        videoTitle: "Your play, ready to share.",
+        findSeconds: "Find your clips in seconds.",
+        step: "Step",
+        court: "Court",
+        time: "Time",
+        continuous: "Continuous capture",
+        continuousText: "Smart recording that works while you play.",
+        button: "On-court button",
+        buttonText: "Press it and save your most recent play (last 45s).",
+        instant: "Instant clips",
+        instantText: "Watch, download and share.",
+        whatIs: "What is",
+        whatText:
+          "Recap records continuously and saves your most recent play with one button.",
+        chooseText: "Just choose your club, court and time.",
+        how: "How does it work?",
+        play: "1) Play",
+        playText: "Recap captures continuously for you.",
+        press: "2) Press the button",
+        pressText: "We save the last 45 seconds.",
+        locate: "3) Find your clip",
+        locateText: "Club → Court → Time.",
+        findHere: "Find your clips here",
+        selection: "Your selection",
+        chooseCourt: "choose a court",
+        chooseTime: "choose a time",
+        selectClub: "Select a club to begin.",
+        reset: "Reset",
+        searching: "Searching...",
+        search: "Find clips",
+        available: "Available clips",
+        clip: "clip",
+        clips: "clips",
+        open: "Open",
+        download: "Download",
+        noVideo: "Clip without video_url",
+        noClips: "There are no clips in that time slot yet.",
+        searchError: "Clips could not be loaded. Error: ",
+        generalError: "Something went wrong while searching for clips.",
+      }
+    : {
+        about: "¿Qué es Recap?",
+        demo: "Ver en acción",
+        liveScore: "Score en Vivo",
+        findClips: "Buscar mis clips",
+        heroTitle: "Tu jugada favorita,",
+        heroAccent: "en un Recap.",
+        heroBody:
+          "Tecnología inteligente diseñada para canchas deportivas. Presiona un botón y guarda tus mejores jugadas.",
+        videoEyebrow: "Recap en acción",
+        videoTitle: "Tu jugada, lista para compartir.",
+        findSeconds: "Encuentra tus clips en segundos.",
+        step: "Paso",
+        court: "Cancha",
+        time: "Horario",
+        continuous: "Captura continua",
+        continuousText: "Grabación inteligente sin que hagas nada.",
+        button: "Botón en cancha",
+        buttonText: "Presionas y guardas tu jugada (últimos 45s).",
+        instant: "Clips al instante",
+        instantText: "Míralo, descárgalo y compártelo.",
+        whatIs: "¿Qué es",
+        whatText:
+          "Recap graba de forma continua y, con un botón, guarda tu jugada más reciente.",
+        chooseText: "Solo elige club, cancha y horario.",
+        how: "¿Cómo funciona?",
+        play: "1) Juega",
+        playText: "Recap captura continuamente por ti.",
+        press: "2) Presiona el botón",
+        pressText: "Guardamos los últimos 45 segundos.",
+        locate: "3) Encuentra tu clip",
+        locateText: "Club → Cancha → Horario.",
+        findHere: "Encuentra tus clips aquí",
+        selection: "Tu selección",
+        chooseCourt: "elige cancha",
+        chooseTime: "elige horario",
+        selectClub: "Selecciona un club para empezar.",
+        reset: "Restablecer",
+        searching: "Buscando...",
+        search: "Buscar clips",
+        available: "Clips disponibles",
+        clip: "clip",
+        clips: "clips",
+        open: "Abrir",
+        download: "Descargar",
+        noVideo: "Clip sin video_url",
+        noClips: "Todavía no hay clips en ese horario.",
+        searchError: "No se pudieron cargar los clips. Error: ",
+        generalError: "Ocurrió un error buscando los clips.",
+      };
 
   const [clubs, setClubs] = useState<Club[]>([]);
   const [courts, setCourts] = useState<Court[]>([]);
@@ -309,9 +412,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
       if (error) {
         console.error("clips rpc error:", error);
 
-        setStatusMsg(
-          "No se pudieron cargar los clips. Error: " + error.message
-        );
+        setStatusMsg(ui.searchError + error.message);
 
         return;
       }
@@ -332,11 +433,11 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
       setClips(rows);
 
       if (rows.length === 0) {
-        setStatusMsg("Todavía no hay clips en ese horario.");
+        setStatusMsg(ui.noClips);
       }
     } catch (err) {
       console.error("handleSearch error:", err);
-      setStatusMsg("Ocurrió un error buscando los clips.");
+      setStatusMsg(ui.generalError);
     } finally {
       setIsSearching(false);
 
@@ -364,173 +465,188 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
       {premiumTop ? (
         <>
-          <header className="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/85 px-4 py-3 backdrop-blur-xl sm:px-6">
-            <div className="relative mx-auto flex max-w-7xl items-center justify-between">
-              <a href="#top" aria-label="Ir al inicio" className="relative z-10">
+          <header className="sticky top-0 z-50 bg-zinc-950/90 px-3 py-3 backdrop-blur-xl sm:px-6">
+            <div className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/15 bg-[#111214] px-3 py-2 sm:px-4">
+              <a href="#top" aria-label="Recap home" className="relative z-10">
                 <img
                   src="/RecapLogo.png"
                   alt="Recap"
-                  className="h-11 w-auto rounded-lg bg-white px-2 object-contain sm:h-12"
+                  className="h-8 w-auto rounded-md bg-white px-1.5 object-contain sm:h-9"
                 />
               </a>
 
-              <nav className="hidden items-center gap-7 text-sm font-medium text-white/70 md:flex">
+              <nav className="hidden items-center gap-8 text-[13px] font-normal text-white/65 md:flex">
                 <a href="#que-es" className="transition hover:text-white">
-                  ¿Qué es Recap?
+                  {ui.about}
                 </a>
                 <a href="#video" className="transition hover:text-white">
-                  Ver en acción
+                  {ui.demo}
                 </a>
                 <a
                   href="/live-score"
                   className="transition hover:text-white"
                 >
-                  Score en Vivo
+                  {ui.liveScore}
                 </a>
               </nav>
 
-              <a
-                href="#buscar"
-                className="hidden items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-zinc-950 transition hover:scale-[1.02] md:flex"
-                style={{ background: ACCENT }}
-              >
-                <Search size={16} strokeWidth={2.5} />
-                Buscar clips
-              </a>
+              <div className="hidden items-center gap-2 md:flex">
+                <div className="flex rounded-full border border-white/15 p-1 text-[11px]">
+                  {(["es", "en"] as const).map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setLanguage(option)}
+                      className={clsx(
+                        "rounded-full px-2.5 py-1 transition",
+                        language === option
+                          ? "bg-white text-zinc-950"
+                          : "text-white/55 hover:text-white"
+                      )}
+                    >
+                      {option.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <a
+                  href="#buscar"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-zinc-950 transition hover:opacity-90"
+                  style={{ background: ACCENT }}
+                >
+                  {ui.findClips}
+                  <ArrowRight size={15} />
+                </a>
+              </div>
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-white md:hidden"
-                aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+                className="relative z-10 grid h-9 w-9 place-items-center rounded-full text-white md:hidden"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={menuOpen}
               >
-                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
             </div>
 
             {menuOpen && (
-              <nav className="mx-auto mt-3 grid max-w-7xl gap-2 border-t border-white/10 pt-3 md:hidden">
+              <nav className="mx-auto mt-2 grid max-w-6xl gap-1.5 rounded-3xl border border-white/10 bg-[#111214] p-2 md:hidden">
+                <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs text-white/55">
+                  <span>Language</span>
+                  <div className="flex rounded-full border border-white/15 p-1">
+                    {(["es", "en"] as const).map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => setLanguage(option)}
+                        className={clsx(
+                          "rounded-full px-3 py-1.5",
+                          language === option
+                            ? "bg-white text-zinc-950"
+                            : "text-white/55"
+                        )}
+                      >
+                        {option.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <a
                   href="#buscar"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-between rounded-2xl bg-white px-4 py-3.5 font-bold text-zinc-950"
+                  className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium text-zinc-950"
+                  style={{ background: ACCENT }}
                 >
-                  Buscar mis clips <Search size={18} />
+                  {ui.findClips} <ArrowRight size={16} />
                 </a>
                 <a
                   href="#que-es"
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 font-semibold text-white"
+                  className="rounded-2xl px-4 py-3 text-sm text-white/75"
                 >
-                  ¿Qué es Recap?
+                  {ui.about}
                 </a>
                 <a
                   href="/live-score"
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 font-semibold text-white"
+                  className="rounded-2xl px-4 py-3 text-sm text-white/75"
                 >
-                  Score en Vivo
+                  {ui.liveScore}
                 </a>
               </nav>
             )}
           </header>
 
-          <section className="relative overflow-hidden border-b border-white/10">
-            <div className="premium-grid pointer-events-none absolute inset-0 opacity-40" />
-            <div
-              className="pointer-events-none absolute left-1/2 top-0 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px] sm:h-[44rem] sm:w-[44rem]"
-              style={{ background: ACCENT + "38" }}
-            />
+          <section className="overflow-hidden border-b border-white/10 bg-[#0b0c0e]">
+            <div className="mx-auto max-w-6xl px-5 pb-14 pt-14 text-center sm:px-6 sm:pb-20 sm:pt-20 lg:pt-24">
+              <h1 className="mx-auto max-w-4xl text-[2.75rem] font-normal leading-[1.02] tracking-[-0.045em] text-white sm:text-6xl lg:text-[4.6rem]">
+                {ui.heroTitle}
+                <span className="block text-white/[0.42]">{ui.heroAccent}</span>
+              </h1>
 
-            <Shell>
-              <div className="relative grid items-center gap-11 pb-16 pt-12 sm:pb-20 sm:pt-16 lg:grid-cols-[1.03fr_.97fr] lg:gap-16 lg:pb-24 lg:pt-24">
-                <div className="text-center lg:text-left">
-                  <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70 lg:mx-0">
-                    <span
-                      className="h-2 w-2 rounded-full shadow-[0_0_14px_currentColor]"
-                      style={{ color: ACCENT, background: ACCENT }}
+              <p className="mx-auto mt-6 max-w-2xl text-[15px] font-normal leading-7 text-white/55 sm:text-lg">
+                {ui.heroBody}
+              </p>
+
+              <div className="mt-8 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
+                <a
+                  href="#buscar"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-medium text-zinc-950 transition hover:opacity-90"
+                  style={{ background: ACCENT }}
+                >
+                  {ui.findClips}
+                  <ArrowRight size={16} />
+                </a>
+                <a
+                  href="#que-es"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 px-6 text-sm font-normal text-white/75 transition hover:bg-white/5 hover:text-white"
+                >
+                  {ui.about}
+                </a>
+              </div>
+
+              <div id="video" className="mt-12 scroll-mt-28 sm:mt-16">
+                <div className="overflow-hidden rounded-[1.15rem] border border-white/15 bg-[#151618] shadow-[0_28px_90px_rgba(0,0,0,.45)] sm:rounded-[1.5rem]">
+                  <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 sm:h-13 sm:px-5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                    </div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35 sm:text-xs">
+                      {ui.videoEyebrow}
+                    </div>
+                    <div className="w-10" />
+                  </div>
+
+                  <div className="relative overflow-hidden bg-black">
+                    <video
+                      src="/video3.mp4"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="auto"
+                      className="aspect-video w-full object-cover"
+                      controls={false}
                     />
-                    Tu mejor punto. Listo para compartir.
-                  </div>
-
-                  <h1 className="mx-auto mt-6 max-w-3xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.055em] sm:text-6xl md:text-7xl lg:mx-0 lg:text-[5rem]">
-                    Tu jugada favorita
-                    <span className="block" style={{ color: ACCENT }}>
-                      en un Recap
-                    </span>
-                  </h1>
-
-                  <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/65 sm:text-lg lg:mx-0">
-                    Tecnología inteligente diseñada para canchas deportivas.
-                    Presiona un botón y guarda tus mejores jugadas.
-                  </p>
-
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
-                    <a
-                      href="#buscar"
-                      className="flex min-h-14 items-center justify-center gap-2 rounded-full px-7 text-base font-extrabold text-zinc-950 shadow-[0_12px_40px_rgba(63,205,49,.22)] transition hover:-translate-y-0.5"
-                      style={{ background: ACCENT }}
-                    >
-                      <Search size={19} strokeWidth={2.5} />
-                      Buscar mis clips
-                    </a>
-                    <a
-                      href="#que-es"
-                      className="flex min-h-14 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-7 text-base font-bold text-white transition hover:bg-white/10"
-                    >
-                      ¿Qué es Recap?
-                      <ArrowDown size={18} />
-                    </a>
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-center gap-5 text-xs font-semibold text-white/45 lg:justify-start">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Zap size={14} style={{ color: ACCENT }} />
-                      Últimos 45 segundos
-                    </span>
-                    <span className="h-1 w-1 rounded-full bg-white/20" />
-                    <span>Sin apps</span>
-                  </div>
-                </div>
-
-                <div id="video" className="relative mx-auto w-full max-w-xl scroll-mt-28">
-                  <div
-                    className="absolute -inset-3 rounded-[2rem] opacity-30 blur-2xl"
-                    style={{ background: ACCENT }}
-                  />
-                  <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-zinc-900 p-2 shadow-2xl shadow-black/50 sm:p-3">
-                    <div className="relative overflow-hidden rounded-[1.3rem] bg-black">
-                      <video
-                        src="/video3.mp4"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
-                        className="aspect-[4/5] w-full object-cover sm:aspect-video lg:aspect-[4/5]"
-                        controls={false}
-                      />
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4 sm:bottom-5 sm:left-5 sm:right-5">
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-                            Recap en acción
-                          </div>
-                          <div className="mt-1 text-lg font-bold text-white">
-                            Presiona. Revive. Comparte.
-                          </div>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-4 text-left sm:p-7">
+                      <div>
+                        <div className="text-sm font-normal text-white/60 sm:text-base">
+                          {ui.videoEyebrow}
                         </div>
-                        <div
-                          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-zinc-950"
-                          style={{ background: ACCENT }}
-                        >
-                          <Play size={18} fill="currentColor" />
+                        <div className="mt-0.5 text-base font-medium text-white sm:text-xl">
+                          {ui.videoTitle}
                         </div>
+                      </div>
+                      <div
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-zinc-950 sm:h-12 sm:w-12"
+                        style={{ background: ACCENT }}
+                      >
+                        <Play size={17} fill="currentColor" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </Shell>
+            </div>
           </section>
         </>
       ) : (
@@ -651,30 +767,30 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           <div className="py-14 md:py-16">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <h2 className="text-2xl font-bold sm:text-3xl">
-                Encuentra tus clips en segundos.
+                {ui.findSeconds}
               </h2>
 
               <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:w-auto">
-                <StepPill active={step === 1} label="Paso 1" sub="Club" />
-                <StepPill active={step === 2} label="Paso 2" sub="Cancha" />
-                <StepPill active={step === 3} label="Paso 3" sub="Horario" />
-                <StepPill active={step === 4} label="Paso 4" sub="Clips" />
+                <StepPill active={step === 1} label={`${ui.step} 1`} sub="Club" />
+                <StepPill active={step === 2} label={`${ui.step} 2`} sub={ui.court} />
+                <StepPill active={step === 3} label={`${ui.step} 3`} sub={ui.time} />
+                <StepPill active={step === 4} label={`${ui.step} 4`} sub="Clips" />
               </div>
             </div>
 
             <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
               {[
                 {
-                  t: "Captura continua",
-                  d: "Grabación inteligente sin que hagas nada.",
+                  t: ui.continuous,
+                  d: ui.continuousText,
                 },
                 {
-                  t: "Botón en cancha",
-                  d: "Presionas y guardas tu jugada (últimos 45s).",
+                  t: ui.button,
+                  d: ui.buttonText,
                 },
                 {
-                  t: "Clips al instante",
-                  d: "Míralo, descárgalo y compártelo.",
+                  t: ui.instant,
+                  d: ui.instantText,
                 },
               ].map((x) => (
                 <LightCard key={x.t} className="p-6">
@@ -696,38 +812,37 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
               <div className="lg:col-span-7">
                 <div className="rounded-3xl bg-zinc-950 p-8 text-white sm:p-10">
                   <h3 className="text-2xl font-bold sm:text-3xl">
-                    ¿Qué es{" "}
+                    {ui.whatIs}{" "}
                     <span style={{ color: ACCENT }}>Recap</span>?
                   </h3>
 
                   <p className="mt-4 text-white/75">
-                    Recap graba de forma continua y, con un botón,
-                    guarda tu jugada más reciente.
+                    {ui.whatText}
                   </p>
 
                   <p className="mt-4 text-white/75">
-                    Solo elige club, cancha y horario.
+                    {ui.chooseText}
                   </p>
                 </div>
               </div>
 
               <div className="lg:col-span-5">
                 <LightCard className="p-8 sm:p-10">
-                  <div className="font-semibold">¿Cómo funciona?</div>
+                  <div className="font-semibold">{ui.how}</div>
 
                   <div className="mt-6 space-y-4">
                     {[
                       {
-                        t: "1) Juega",
-                        d: "Recap captura continuamente por ti.",
+                        t: ui.play,
+                        d: ui.playText,
                       },
                       {
-                        t: "2) Presiona el botón",
-                        d: "Guardamos los últimos 45 segundos.",
+                        t: ui.press,
+                        d: ui.pressText,
                       },
                       {
-                        t: "3) Encuentra tu clip",
-                        d: "Club → Cancha → Horario.",
+                        t: ui.locate,
+                        d: ui.locateText,
                       },
                     ].map((s) => (
                       <div
@@ -756,26 +871,26 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 className="text-2xl font-extrabold sm:text-3xl"
                 style={{ color: ACCENT }}
               >
-                Encuentra tus clips aquí
+                {ui.findHere}
               </h2>
             </div>
 
             <Glass className="p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div className="font-semibold">Tu selección</div>
+                  <div className="font-semibold">{ui.selection}</div>
 
                   <div className="mt-1 text-sm text-white/70">
                     {selectedClub ? (
                       <>
                         {selectedClub.name}
                         {" • "}
-                        {selectedCourtName ?? "elige cancha"}
+                        {selectedCourtName ?? ui.chooseCourt}
                         {" • "}
-                        {selectedTimeLabel ?? "elige horario"}
+                        {selectedTimeLabel ?? ui.chooseTime}
                       </>
                     ) : (
-                      "Selecciona un club para empezar."
+                      ui.selectClub
                     )}
                   </div>
                 </div>
@@ -785,7 +900,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                     onClick={resetSelections}
                     className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold"
                   >
-                    Restablecer
+                    {ui.reset}
                   </button>
 
                   <button
@@ -803,7 +918,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         : undefined
                     }
                   >
-                    {isSearching ? "Buscando..." : "Buscar clips"}
+                    {isSearching ? ui.searching : ui.search}
                   </button>
                 </div>
               </div>
@@ -852,7 +967,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
               <div className="space-y-8 lg:col-span-7">
                 <div>
-                  <h3 className="text-lg font-semibold">Cancha</h3>
+                  <h3 className="text-lg font-semibold">{ui.court}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     {courts.map((court) => {
@@ -891,7 +1006,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold">Horario</h3>
+                  <h3 className="text-lg font-semibold">{ui.time}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     {clubTimes.map((t, index) => {
@@ -947,7 +1062,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       onClick={resetSelections}
                       className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold"
                     >
-                      Restablecer
+                      {ui.reset}
                     </button>
 
                     <button
@@ -965,7 +1080,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                           : undefined
                       }
                     >
-                      {isSearching ? "Buscando..." : "Buscar clips"}
+                      {isSearching ? ui.searching : ui.search}
                     </button>
                   </div>
                 </Glass>
@@ -983,12 +1098,11 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 <div className="mt-8">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">
-                      Clips disponibles
+                      {ui.available}
                     </h3>
 
                     <div className="text-sm text-white/60">
-                      {clips.length} clip
-                      {clips.length === 1 ? "" : "s"}
+                      {clips.length} {clips.length === 1 ? ui.clip : ui.clips}
                     </div>
                   </div>
 
@@ -1019,7 +1133,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             />
                           ) : (
                             <div className="flex h-44 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                              Clip sin video_url
+                              {ui.noVideo}
                             </div>
                           )}
 
@@ -1027,7 +1141,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             <p className="truncate text-xs text-white/60">
                               {new Date(
                                 clip.created_at
-                              ).toLocaleString("es-VE", {
+                              ).toLocaleString(language === "en" ? "en-US" : "es-VE", {
                                 timeZone: "America/Caracas",
                               })}
                             </p>
@@ -1040,7 +1154,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                                   rel="noreferrer"
                                   className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs"
                                 >
-                                  Abrir
+                                  {ui.open}
                                 </a>
 
                                 <a
@@ -1053,7 +1167,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                                   className="rounded-full px-3 py-2 text-xs font-semibold text-zinc-950"
                                   style={{ background: ACCENT }}
                                 >
-                                  Descargar
+                                  {ui.download}
                                 </a>
                               </div>
                             )}
