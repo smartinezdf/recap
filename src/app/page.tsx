@@ -455,7 +455,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
   };
 
   return (
-    <main id="top" className="min-h-screen bg-zinc-950 text-white">
+    <main id="top" className="flex min-h-screen flex-col bg-zinc-950 text-white">
       {!premiumTop && <div className="pointer-events-none fixed inset-0 opacity-40">
         <div
           className="absolute -top-28 left-1/2 h-80 w-[52rem] -translate-x-1/2 rounded-full blur-3xl"
@@ -603,20 +603,20 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
               </div>
 
               <div id="video" className="mt-12 scroll-mt-28 sm:mt-16">
-                <div className="overflow-hidden rounded-[1.15rem] border border-white/15 bg-[#151618] shadow-[0_28px_90px_rgba(0,0,0,.45)] sm:rounded-[1.5rem]">
-                  <div className="flex h-11 items-center justify-between border-b border-white/10 px-4 sm:h-13 sm:px-5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                    </div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35 sm:text-xs">
+                <div className="mb-4 flex items-end justify-between text-left sm:mb-5">
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/40 sm:text-xs">
                       {ui.videoEyebrow}
                     </div>
-                    <div className="w-10" />
+                    <div className="mt-1 text-lg font-normal text-white sm:text-2xl">
+                      {ui.videoTitle}
+                    </div>
                   </div>
+                  <div className="mb-1 h-px w-12 sm:w-20" style={{ background: ACCENT }} />
+                </div>
 
-                  <div className="relative overflow-hidden bg-black">
+                <div className="rounded-[1.25rem] border border-white/15 bg-white/[0.04] p-1.5 shadow-[0_28px_90px_rgba(0,0,0,.45)] sm:rounded-[1.6rem] sm:p-2">
+                  <div className="relative overflow-hidden rounded-[0.9rem] bg-black sm:rounded-[1.1rem]">
                     <video
                       src="/video3.mp4"
                       autoPlay
@@ -627,16 +627,10 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       className="aspect-video w-full object-cover"
                       controls={false}
                     />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-left sm:p-7">
-                      <div>
-                        <div className="text-sm font-normal text-white/60 sm:text-base">
-                          {ui.videoEyebrow}
-                        </div>
-                        <div className="mt-0.5 text-base font-medium text-white sm:text-xl">
-                          {ui.videoTitle}
-                        </div>
-                      </div>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-[10px] uppercase tracking-[0.15em] text-white/75 backdrop-blur-md sm:bottom-5 sm:left-5 sm:text-xs">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT }} />
+                      Recap
                     </div>
                   </div>
                 </div>
@@ -759,7 +753,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
       <section
         id="experiencia"
-        className={premiumTop ? "bg-white text-zinc-950" : "bg-zinc-100 text-zinc-950"}
+        className={premiumTop ? "order-2 bg-white text-zinc-950" : "bg-zinc-100 text-zinc-950"}
       >
         <Shell>
           <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
@@ -829,7 +823,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
       <section
         id="que-es"
-        className={premiumTop ? "bg-[#f3f3f1] text-zinc-950" : "bg-white text-zinc-950"}
+        className={premiumTop ? "order-1 bg-[#f3f3f1] text-zinc-950" : "bg-white text-zinc-950"}
       >
         <Shell>
           <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
@@ -897,7 +891,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         </Shell>
       </section>
 
-      <section id="buscar" className={premiumTop ? "bg-[#0b0c0e] text-white" : "bg-zinc-950 text-white"}>
+      <section id="buscar" className={premiumTop ? "order-3 bg-[#0b0c0e] text-white" : "bg-zinc-950 text-white"}>
         <Shell>
           <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
             <div className={premiumTop ? "mb-12" : "mb-10 text-center"}>
@@ -958,11 +952,11 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
               </div>
             </div>
 
-            <div className={premiumTop ? "mt-14 grid grid-cols-1 gap-14 lg:grid-cols-12" : "mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12"}>
-              <div className={premiumTop ? "lg:col-span-6" : "lg:col-span-5"}>
+            <div className={premiumTop ? "mt-14 space-y-12" : "mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12"}>
+              <div className={premiumTop ? "" : "lg:col-span-5"}>
                 <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>Club</h3>
 
-                <div className={premiumTop ? "mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" : "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"}>
+                <div className={premiumTop ? "mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"}>
                   {clubs.map((club) => {
                     const isSelected = selectedClub?.id === club.id;
 
@@ -972,7 +966,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         onClick={() => setSelectedClub(club)}
                         className={premiumTop
                           ? clsx(
-                              "group min-h-28 rounded-2xl border bg-white p-5 text-left text-zinc-950 transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300",
+                              "group relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-2xl border bg-[#17181b] p-4 text-center text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[#1d1e21] sm:min-h-48 sm:p-5",
                               isSelected ? "border-transparent" : "border-white/10"
                             )
                           : "rounded-3xl border border-white/10 bg-white/[0.07] p-4 text-left"}
@@ -984,14 +978,14 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             : undefined
                         }
                       >
-                        <div className={premiumTop ? "flex items-center gap-4" : "flex items-center gap-3"}>
+                        <div className={premiumTop ? "flex w-full flex-col items-center justify-center" : "flex items-center gap-3"}>
                           {club.logo_url && (
                             premiumTop ? (
-                              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1.5">
+                              <div className="grid h-20 w-full place-items-center sm:h-24">
                                 <img
                                   src={club.logo_url}
                                   alt={club.name}
-                                  className="h-full w-full object-contain"
+                                  className="h-full max-h-20 w-full max-w-[8.5rem] object-contain sm:max-h-24"
                                 />
                               </div>
                             ) : (
@@ -1003,19 +997,14 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             )
                           )}
 
-                          <div className="min-w-0 flex-1">
-                            <div className={premiumTop ? "truncate text-base font-medium" : "font-semibold"}>
+                          <div className={premiumTop ? "mt-4 w-full min-w-0" : "min-w-0 flex-1"}>
+                            <div className={premiumTop ? "truncate text-sm font-medium text-white/85 sm:text-base" : "font-semibold"}>
                               {club.name}
                             </div>
-                            {premiumTop && (
-                              <div className="mt-1 text-xs text-zinc-400">
-                                {language === "en" ? "Select club" : "Seleccionar club"}
-                              </div>
-                            )}
                           </div>
                           {premiumTop && (
                             <span
-                              className="h-2.5 w-2.5 rounded-full border border-zinc-300"
+                              className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border border-white/25"
                               style={isSelected ? { background: ACCENT, borderColor: ACCENT } : undefined}
                             />
                           )}
@@ -1026,7 +1015,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 </div>
               </div>
 
-              <div className={premiumTop ? "space-y-10 lg:col-span-6 lg:border-l lg:border-white/10 lg:pl-12" : "space-y-8 lg:col-span-7"}>
+              {(!premiumTop || selectedClub) && <div className={premiumTop ? "space-y-9 border-t border-white/10 pt-8" : "space-y-8 lg:col-span-7"}>
                 <div>
                   <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>{ui.court}</h3>
 
@@ -1116,7 +1105,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                     })}
                   </div>
                 </div>
-              </div>
+              </div>}
             </div>
 
             {selectedClub && selectedCourtId && selectedTime && (
