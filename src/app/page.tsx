@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Menu, Play, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import supabase from "@/lib/supabase";
 
 const ACCENT = "#3FCD31";
@@ -199,6 +199,8 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         whatText:
           "Recap records continuously and saves your most recent play with one button.",
         chooseText: "Just choose your club, court and time.",
+        availabilityNote:
+          "Clips are available only on the day you played. Download them before leaving the court.",
         how: "How does it work?",
         play: "1) Play",
         playText: "Recap captures continuously for you.",
@@ -249,6 +251,8 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         whatText:
           "Recap graba de forma continua y, con un botón, guarda tu jugada más reciente.",
         chooseText: "Solo elige club, cancha y horario.",
+        availabilityNote:
+          "Los clips están disponibles únicamente el día que jugaste. Descárgalos antes de salir de la cancha.",
         how: "¿Cómo funciona?",
         play: "1) Juega",
         playText: "Recap captura continuamente por ti.",
@@ -452,7 +456,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
   return (
     <main id="top" className="min-h-screen bg-zinc-950 text-white">
-      <div className="pointer-events-none fixed inset-0 opacity-40">
+      {!premiumTop && <div className="pointer-events-none fixed inset-0 opacity-40">
         <div
           className="absolute -top-28 left-1/2 h-80 w-[52rem] -translate-x-1/2 rounded-full blur-3xl"
           style={{ background: ACCENT + "33" }}
@@ -461,37 +465,34 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         <div className="absolute top-56 left-[-10rem] h-80 w-80 rounded-full bg-white/10 blur-3xl" />
 
         <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-[34rem] rounded-full bg-white/10 blur-3xl" />
-      </div>
+      </div>}
 
       {premiumTop ? (
         <>
-          <header className="sticky top-0 z-50 bg-zinc-950/90 px-3 py-3 backdrop-blur-xl sm:px-6">
-            <div className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/15 bg-[#111214] px-3 py-2 sm:px-4">
+          <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl sm:px-6">
+            <div className="mx-auto flex max-w-6xl items-center justify-between">
               <a href="#top" aria-label="Recap home" className="relative z-10">
                 <img
                   src="/RecapLogo.png"
                   alt="Recap"
-                  className="h-8 w-auto rounded-md bg-white px-1.5 object-contain sm:h-9"
+                  className="h-9 w-auto object-contain sm:h-10"
                 />
               </a>
 
-              <nav className="hidden items-center gap-8 text-[13px] font-normal text-white/65 md:flex">
-                <a href="#que-es" className="transition hover:text-white">
+              <nav className="hidden items-center gap-8 text-[13px] font-normal text-zinc-600 md:flex">
+                <a href="#que-es" className="transition hover:text-zinc-950">
                   {ui.about}
-                </a>
-                <a href="#video" className="transition hover:text-white">
-                  {ui.demo}
                 </a>
                 <a
                   href="/live-score"
-                  className="transition hover:text-white"
+                  className="transition hover:text-zinc-950"
                 >
                   {ui.liveScore}
                 </a>
               </nav>
 
               <div className="hidden items-center gap-2 md:flex">
-                <div className="flex rounded-full border border-white/15 p-1 text-[11px]">
+                <div className="flex rounded-full border border-zinc-200 p-1 text-[11px]">
                   {(["es", "en"] as const).map((option) => (
                     <button
                       key={option}
@@ -499,8 +500,8 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       className={clsx(
                         "rounded-full px-2.5 py-1 transition",
                         language === option
-                          ? "bg-white text-zinc-950"
-                          : "text-white/55 hover:text-white"
+                          ? "bg-zinc-950 text-white"
+                          : "text-zinc-500 hover:text-zinc-950"
                       )}
                     >
                       {option.toUpperCase()}
@@ -519,7 +520,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="relative z-10 grid h-9 w-9 place-items-center rounded-full text-white md:hidden"
+                className="relative z-10 grid h-9 w-9 place-items-center rounded-full text-zinc-950 md:hidden"
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={menuOpen}
               >
@@ -528,10 +529,10 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
             </div>
 
             {menuOpen && (
-              <nav className="mx-auto mt-2 grid max-w-6xl gap-1.5 rounded-3xl border border-white/10 bg-[#111214] p-2 md:hidden">
-                <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs text-white/55">
+              <nav className="mx-auto mt-3 grid max-w-6xl gap-1.5 rounded-3xl border border-zinc-200 bg-white p-2 shadow-xl shadow-black/10 md:hidden">
+                <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs text-zinc-500">
                   <span>Language</span>
-                  <div className="flex rounded-full border border-white/15 p-1">
+                  <div className="flex rounded-full border border-zinc-200 p-1">
                     {(["es", "en"] as const).map((option) => (
                       <button
                         key={option}
@@ -539,8 +540,8 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         className={clsx(
                           "rounded-full px-3 py-1.5",
                           language === option
-                            ? "bg-white text-zinc-950"
-                            : "text-white/55"
+                            ? "bg-zinc-950 text-white"
+                            : "text-zinc-500"
                         )}
                       >
                         {option.toUpperCase()}
@@ -559,13 +560,13 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 <a
                   href="#que-es"
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-2xl px-4 py-3 text-sm text-white/75"
+                  className="rounded-2xl px-4 py-3 text-sm text-zinc-700"
                 >
                   {ui.about}
                 </a>
                 <a
                   href="/live-score"
-                  className="rounded-2xl px-4 py-3 text-sm text-white/75"
+                  className="rounded-2xl px-4 py-3 text-sm text-zinc-700"
                 >
                   {ui.liveScore}
                 </a>
@@ -627,7 +628,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       controls={false}
                     />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-4 text-left sm:p-7">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-left sm:p-7">
                       <div>
                         <div className="text-sm font-normal text-white/60 sm:text-base">
                           {ui.videoEyebrow}
@@ -635,12 +636,6 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         <div className="mt-0.5 text-base font-medium text-white sm:text-xl">
                           {ui.videoTitle}
                         </div>
-                      </div>
-                      <div
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-zinc-950 sm:h-12 sm:w-12"
-                        style={{ background: ACCENT }}
-                      >
-                        <Play size={17} fill="currentColor" />
                       </div>
                     </div>
                   </div>
@@ -762,23 +757,41 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
         </>
       )}
 
-      <section id="experiencia" className="bg-zinc-100 text-zinc-950">
+      <section
+        id="experiencia"
+        className={premiumTop ? "bg-white text-zinc-950" : "bg-zinc-100 text-zinc-950"}
+      >
         <Shell>
-          <div className="py-14 md:py-16">
+          <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <h2 className="text-2xl font-bold sm:text-3xl">
+              <h2 className={premiumTop ? "max-w-xl text-3xl font-normal tracking-[-0.03em] sm:text-5xl" : "text-2xl font-bold sm:text-3xl"}>
                 {ui.findSeconds}
               </h2>
 
-              <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:w-auto">
-                <StepPill active={step === 1} label={`${ui.step} 1`} sub="Club" />
-                <StepPill active={step === 2} label={`${ui.step} 2`} sub={ui.court} />
-                <StepPill active={step === 3} label={`${ui.step} 3`} sub={ui.time} />
-                <StepPill active={step === 4} label={`${ui.step} 4`} sub="Clips" />
-              </div>
+              {premiumTop ? (
+                <div className="grid w-full grid-cols-4 border-y border-zinc-200 md:w-auto md:min-w-[28rem]">
+                  {["Club", ui.court, ui.time, "Clips"].map((label, index) => (
+                    <div key={label} className="py-3 text-center">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-zinc-800 sm:text-sm">
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:w-auto">
+                  <StepPill active={step === 1} label={`${ui.step} 1`} sub="Club" />
+                  <StepPill active={step === 2} label={`${ui.step} 2`} sub={ui.court} />
+                  <StepPill active={step === 3} label={`${ui.step} 3`} sub={ui.time} />
+                  <StepPill active={step === 4} label={`${ui.step} 4`} sub="Clips" />
+                </div>
+              )}
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className={premiumTop ? "mt-14 grid grid-cols-1 border-t border-zinc-200 md:grid-cols-3" : "mt-10 grid grid-cols-1 gap-4 md:grid-cols-3"}>
               {[
                 {
                   t: ui.continuous,
@@ -792,45 +805,66 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                   t: ui.instant,
                   d: ui.instantText,
                 },
-              ].map((x) => (
-                <LightCard key={x.t} className="p-6">
-                  <div className="text-sm font-semibold">{x.t}</div>
-                  <div className="mt-2 text-sm text-zinc-600">
-                    {x.d}
+              ].map((x, index) => (
+                premiumTop ? (
+                  <div
+                    key={x.t}
+                    className="border-b border-zinc-200 py-8 md:border-b-0 md:border-r md:px-8 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
+                  >
+                    <div className="text-xs text-zinc-400">0{index + 1}</div>
+                    <div className="mt-5 text-lg font-medium">{x.t}</div>
+                    <div className="mt-2 max-w-xs text-sm leading-6 text-zinc-500">{x.d}</div>
                   </div>
-                </LightCard>
+                ) : (
+                  <LightCard key={x.t} className="p-6">
+                    <div className="text-sm font-semibold">{x.t}</div>
+                    <div className="mt-2 text-sm text-zinc-600">{x.d}</div>
+                  </LightCard>
+                )
               ))}
             </div>
           </div>
         </Shell>
       </section>
 
-      <section id="que-es" className="bg-white text-zinc-950">
+      <section
+        id="que-es"
+        className={premiumTop ? "bg-[#f3f3f1] text-zinc-950" : "bg-white text-zinc-950"}
+      >
         <Shell>
-          <div className="py-14 md:py-16">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
+            <div className={premiumTop ? "grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-20" : "grid grid-cols-1 gap-8 lg:grid-cols-12"}>
               <div className="lg:col-span-7">
-                <div className="rounded-3xl bg-zinc-950 p-8 text-white sm:p-10">
-                  <h3 className="text-2xl font-bold sm:text-3xl">
+                <div className={premiumTop ? "" : "rounded-3xl bg-zinc-950 p-8 text-white sm:p-10"}>
+                  <h3 className={premiumTop ? "text-4xl font-normal tracking-[-0.035em] sm:text-6xl" : "text-2xl font-bold sm:text-3xl"}>
                     {ui.whatIs}{" "}
                     <span style={{ color: ACCENT }}>Recap</span>?
                   </h3>
 
-                  <p className="mt-4 text-white/75">
+                  <p className={premiumTop ? "mt-8 max-w-2xl text-lg leading-8 text-zinc-600" : "mt-4 text-white/75"}>
                     {ui.whatText}
                   </p>
 
-                  <p className="mt-4 text-white/75">
+                  <p className={premiumTop ? "mt-4 text-lg leading-8 text-zinc-600" : "mt-4 text-white/75"}>
                     {ui.chooseText}
                   </p>
+
+                  <div
+                    className={premiumTop
+                      ? "mt-10 border-l-2 pl-5 text-sm leading-6 text-zinc-700"
+                      : "mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-white/75"}
+                    style={{ borderLeftColor: ACCENT }}
+                  >
+                    {ui.availabilityNote}
+                  </div>
                 </div>
               </div>
 
               <div className="lg:col-span-5">
-                <LightCard className="p-8 sm:p-10">
-                  <div className="font-semibold">{ui.how}</div>
+                <div className={premiumTop ? "border-t border-zinc-300" : "rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10"}>
+                  <div className={premiumTop ? "py-5 text-sm font-medium uppercase tracking-[0.15em] text-zinc-500" : "font-semibold"}>{ui.how}</div>
 
-                  <div className="mt-6 space-y-4">
+                  <div className={premiumTop ? "" : "mt-6 space-y-4"}>
                     {[
                       {
                         t: ui.play,
@@ -847,40 +881,40 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                     ].map((s) => (
                       <div
                         key={s.t}
-                        className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5"
+                        className={premiumTop ? "border-t border-zinc-300 py-6" : "rounded-2xl border border-zinc-200 bg-zinc-50 p-5"}
                       >
-                        <div className="font-semibold">{s.t}</div>
-                        <div className="mt-2 text-sm text-zinc-600">
+                        <div className={premiumTop ? "font-medium" : "font-semibold"}>{s.t}</div>
+                        <div className="mt-2 text-sm leading-6 text-zinc-600">
                           {s.d}
                         </div>
                       </div>
                     ))}
                   </div>
-                </LightCard>
+                </div>
               </div>
             </div>
           </div>
         </Shell>
       </section>
 
-      <section id="buscar" className="bg-zinc-950 text-white">
+      <section id="buscar" className={premiumTop ? "bg-[#0b0c0e] text-white" : "bg-zinc-950 text-white"}>
         <Shell>
-          <div className="py-14 md:py-16">
-            <div className="mb-10 text-center">
+          <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
+            <div className={premiumTop ? "mb-12" : "mb-10 text-center"}>
               <h2
-                className="text-2xl font-extrabold sm:text-3xl"
-                style={{ color: ACCENT }}
+                className={premiumTop ? "max-w-3xl text-4xl font-normal tracking-[-0.035em] text-white sm:text-6xl" : "text-2xl font-extrabold sm:text-3xl"}
+                style={!premiumTop ? { color: ACCENT } : undefined}
               >
                 {ui.findHere}
               </h2>
             </div>
 
-            <Glass className="p-6">
+            <div className={premiumTop ? "border-y border-white/15 py-5" : "rounded-3xl border border-white/10 bg-white/[0.08] p-6 backdrop-blur shadow-[0_0_0_1px_rgba(255,255,255,0.03)]"}>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div className="font-semibold">{ui.selection}</div>
+                  <div className={premiumTop ? "text-xs uppercase tracking-[0.15em] text-white/40" : "font-semibold"}>{ui.selection}</div>
 
-                  <div className="mt-1 text-sm text-white/70">
+                  <div className={premiumTop ? "mt-2 text-sm text-white/75" : "mt-1 text-sm text-white/70"}>
                     {selectedClub ? (
                       <>
                         {selectedClub.name}
@@ -898,7 +932,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 <div className="flex gap-3">
                   <button
                     onClick={resetSelections}
-                    className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold"
+                    className={premiumTop ? "rounded-full border border-white/15 px-5 py-2.5 text-sm font-normal text-white/70" : "rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold"}
                   >
                     {ui.reset}
                   </button>
@@ -922,13 +956,13 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                   </button>
                 </div>
               </div>
-            </Glass>
+            </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
-              <div className="lg:col-span-5">
-                <h3 className="text-lg font-semibold">Club</h3>
+            <div className={premiumTop ? "mt-14 grid grid-cols-1 gap-14 lg:grid-cols-12" : "mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12"}>
+              <div className={premiumTop ? "lg:col-span-6" : "lg:col-span-5"}>
+                <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>Club</h3>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className={premiumTop ? "mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" : "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"}>
                   {clubs.map((club) => {
                     const isSelected = selectedClub?.id === club.id;
 
@@ -936,28 +970,55 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       <button
                         key={club.id}
                         onClick={() => setSelectedClub(club)}
-                        className="rounded-3xl border border-white/10 bg-white/[0.07] p-4 text-left"
+                        className={premiumTop
+                          ? clsx(
+                              "group min-h-28 rounded-2xl border bg-white p-5 text-left text-zinc-950 transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300",
+                              isSelected ? "border-transparent" : "border-white/10"
+                            )
+                          : "rounded-3xl border border-white/10 bg-white/[0.07] p-4 text-left"}
                         style={
                           isSelected
-                            ? {
-                                boxShadow:
-                                  "0 0 0 2px " + ACCENT + "88",
-                              }
+                            ? premiumTop
+                              ? { boxShadow: "inset 0 0 0 2px " + ACCENT }
+                              : { boxShadow: "0 0 0 2px " + ACCENT + "88" }
                             : undefined
                         }
                       >
-                        <div className="flex items-center gap-3">
+                        <div className={premiumTop ? "flex items-center gap-4" : "flex items-center gap-3"}>
                           {club.logo_url && (
-                            <img
-                              src={club.logo_url}
-                              alt={club.name}
-                              className="h-10 w-10 shrink-0 rounded-full object-cover"
-                            />
+                            premiumTop ? (
+                              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1.5">
+                                <img
+                                  src={club.logo_url}
+                                  alt={club.name}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <img
+                                src={club.logo_url}
+                                alt={club.name}
+                                className="h-10 w-10 shrink-0 rounded-full object-cover"
+                              />
+                            )
                           )}
 
-                          <div className="font-semibold">
-                            {club.name}
+                          <div className="min-w-0 flex-1">
+                            <div className={premiumTop ? "truncate text-base font-medium" : "font-semibold"}>
+                              {club.name}
+                            </div>
+                            {premiumTop && (
+                              <div className="mt-1 text-xs text-zinc-400">
+                                {language === "en" ? "Select club" : "Seleccionar club"}
+                              </div>
+                            )}
                           </div>
+                          {premiumTop && (
+                            <span
+                              className="h-2.5 w-2.5 rounded-full border border-zinc-300"
+                              style={isSelected ? { background: ACCENT, borderColor: ACCENT } : undefined}
+                            />
+                          )}
                         </div>
                       </button>
                     );
@@ -965,9 +1026,9 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 </div>
               </div>
 
-              <div className="space-y-8 lg:col-span-7">
+              <div className={premiumTop ? "space-y-10 lg:col-span-6 lg:border-l lg:border-white/10 lg:pl-12" : "space-y-8 lg:col-span-7"}>
                 <div>
-                  <h3 className="text-lg font-semibold">{ui.court}</h3>
+                  <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>{ui.court}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     {courts.map((court) => {
@@ -988,13 +1049,19 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             setHasSearched(false);
                             setStatusMsg(null);
                           }}
-                          className="rounded-full border border-white/10 bg-white/[0.07] px-5 py-3 text-sm font-semibold"
+                          className={premiumTop
+                            ? clsx(
+                                "rounded-full border px-5 py-3 text-sm font-medium transition",
+                                isSelected
+                                  ? "border-transparent text-zinc-950"
+                                  : "border-white/15 bg-white/[0.04] text-white/75 hover:bg-white/[0.08]"
+                              )
+                            : "rounded-full border border-white/10 bg-white/[0.07] px-5 py-3 text-sm font-semibold"}
                           style={
                             isSelected
-                              ? {
-                                  boxShadow:
-                                    "0 0 0 2px " + ACCENT + "88",
-                                }
+                              ? premiumTop
+                                ? { background: ACCENT }
+                                : { boxShadow: "0 0 0 2px " + ACCENT + "88" }
                               : undefined
                           }
                         >
@@ -1006,7 +1073,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold">{ui.time}</h3>
+                  <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>{ui.time}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     {clubTimes.map((t, index) => {
@@ -1024,13 +1091,19 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             setHasSearched(false);
                             setStatusMsg(null);
                           }}
-                          className="rounded-full border border-white/10 bg-white/[0.07] px-5 py-3 text-sm font-semibold"
+                          className={premiumTop
+                            ? clsx(
+                                "rounded-full border px-5 py-3 text-sm font-medium transition",
+                                isSelected
+                                  ? "border-transparent text-zinc-950"
+                                  : "border-white/15 bg-white/[0.04] text-white/75 hover:bg-white/[0.08]"
+                              )
+                            : "rounded-full border border-white/10 bg-white/[0.07] px-5 py-3 text-sm font-semibold"}
                           style={
                             isSelected
-                              ? {
-                                  boxShadow:
-                                    "0 0 0 2px " + ACCENT + "88",
-                                }
+                              ? premiumTop
+                                ? { background: ACCENT }
+                                : { boxShadow: "0 0 0 2px " + ACCENT + "88" }
                               : undefined
                           }
                         >
