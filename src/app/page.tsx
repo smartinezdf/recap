@@ -185,6 +185,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Smart technology built for sports courts. Press one button and save your best plays.",
         videoEyebrow: "Recap in action",
         videoTitle: "Your play, ready to share.",
+        followUs: "Follow us",
         findSeconds: "Find your clips in seconds.",
         step: "Step",
         court: "Court",
@@ -237,6 +238,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
           "Tecnología inteligente diseñada para canchas deportivas. Presiona un botón y guarda tus mejores jugadas.",
         videoEyebrow: "Recap en acción",
         videoTitle: "Tu jugada, lista para compartir.",
+        followUs: "Síguenos",
         findSeconds: "Encuentra tus clips en segundos.",
         step: "Paso",
         court: "Cancha",
@@ -292,7 +294,19 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
   const [hasSearched, setHasSearched] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
+  const courtSectionRef = useRef<HTMLDivElement | null>(null);
+  const timeSectionRef = useRef<HTMLDivElement | null>(null);
+  const searchCtaRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToStep = (target: { current: HTMLDivElement | null }) => {
+    window.setTimeout(() => {
+      target.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 260);
+  };
 
   useEffect(() => {
     (async () => {
@@ -634,6 +648,21 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                     </div>
                   </div>
                 </div>
+
+                <a
+                  href="https://www.instagram.com/dale.recap/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group mx-auto mt-5 inline-flex items-center gap-2 text-xs font-normal text-white/50 transition hover:text-white sm:text-sm"
+                >
+                  {ui.followUs}
+                  <span className="text-white/85 transition group-hover:text-[#3FCD31]">
+                    @dale.recap
+                  </span>
+                  <span aria-hidden="true" className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                    ↗
+                  </span>
+                </a>
               </div>
             </div>
           </section>
@@ -753,10 +782,23 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
 
       <section
         id="experiencia"
-        className={premiumTop ? "order-2 bg-white text-zinc-950" : "bg-zinc-100 text-zinc-950"}
+        className={premiumTop ? "relative order-2 overflow-hidden bg-[#f7f9f6] text-zinc-950" : "bg-zinc-100 text-zinc-950"}
       >
+        {premiumTop && (
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div
+              className="absolute -left-28 top-0 h-72 w-72 rounded-full blur-[100px]"
+              style={{ background: ACCENT + "24" }}
+            />
+            <div
+              className="absolute -right-28 bottom-0 h-80 w-80 rounded-full blur-[120px]"
+              style={{ background: ACCENT + "1F" }}
+            />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#3FCD31]/45 to-transparent" />
+          </div>
+        )}
         <Shell>
-          <div className={premiumTop ? "py-20 md:py-28" : "py-14 md:py-16"}>
+          <div className={premiumTop ? "relative py-20 md:py-28" : "py-14 md:py-16"}>
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <h2 className={premiumTop ? "max-w-xl text-3xl font-normal tracking-[-0.03em] sm:text-5xl" : "text-2xl font-bold sm:text-3xl"}>
                 {ui.findSeconds}
@@ -964,11 +1006,19 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                       .replace(/[\u0300-\u036f]/g, "")
                       .toLowerCase();
                     const isGarana = normalizedClubName.includes("garana");
+                    const isWideLogo =
+                      normalizedClubName.includes("wild") ||
+                      normalizedClubName.includes("yupa") ||
+                      normalizedClubName.includes("you padel") ||
+                      normalizedClubName.includes("youpadel");
 
                     return (
                       <button
                         key={club.id}
-                        onClick={() => setSelectedClub(club)}
+                        onClick={() => {
+                          setSelectedClub(club);
+                          scrollToStep(courtSectionRef);
+                        }}
                         className={premiumTop
                           ? clsx(
                               "group relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-[1.4rem] border bg-gradient-to-b from-[#222326] to-[#131416] p-4 text-center text-white shadow-[0_16px_45px_rgba(0,0,0,.22)] transition duration-200 hover:-translate-y-0.5 hover:border-white/20 sm:min-h-48 sm:rounded-[1.65rem] sm:p-5",
@@ -986,13 +1036,22 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                         <div className={premiumTop ? "flex w-full flex-col items-center justify-center" : "flex items-center gap-3"}>
                           {club.logo_url && (
                             premiumTop ? (
-                              <div className="grid h-20 w-full place-items-center overflow-hidden rounded-2xl sm:h-24 sm:rounded-[1.25rem]">
+                              <div
+                                className={clsx(
+                                  "grid w-full place-items-center overflow-hidden rounded-2xl sm:rounded-[1.25rem]",
+                                  isWideLogo ? "h-24 sm:h-28" : "h-20 sm:h-24"
+                                )}
+                              >
                                 <img
                                   src={club.logo_url}
                                   alt={club.name}
                                   className={clsx(
-                                    "h-full max-h-20 w-full max-w-[8.5rem] rounded-xl object-contain transition-transform duration-200 sm:max-h-24 sm:rounded-2xl",
-                                    isGarana ? "scale-[1.22]" : "scale-105"
+                                    "h-full w-full rounded-xl object-contain transition-transform duration-200 sm:rounded-2xl",
+                                    isGarana
+                                      ? "max-h-20 max-w-[8.5rem] scale-[1.32] sm:max-h-24"
+                                      : isWideLogo
+                                        ? "max-h-24 max-w-full scale-[1.1] sm:max-h-28"
+                                        : "max-h-20 max-w-[8.5rem] scale-105 sm:max-h-24"
                                   )}
                                 />
                               </div>
@@ -1024,7 +1083,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
               </div>
 
               {(!premiumTop || selectedClub) && <div className={premiumTop ? "space-y-9 border-t border-white/10 pt-8" : "space-y-8 lg:col-span-7"}>
-                <div>
+                <div ref={courtSectionRef} className="scroll-mt-28">
                   <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>{ui.court}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
@@ -1045,6 +1104,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             setClips([]);
                             setHasSearched(false);
                             setStatusMsg(null);
+                            scrollToStep(timeSectionRef);
                           }}
                           className={premiumTop
                             ? clsx(
@@ -1069,7 +1129,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                   </div>
                 </div>
 
-                <div>
+                <div ref={timeSectionRef} className="scroll-mt-28">
                   <h3 className={premiumTop ? "text-sm font-medium uppercase tracking-[0.14em] text-white/50" : "text-lg font-semibold"}>{ui.time}</h3>
 
                   <div className="mt-4 flex flex-wrap gap-3">
@@ -1087,6 +1147,7 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
                             setClips([]);
                             setHasSearched(false);
                             setStatusMsg(null);
+                            scrollToStep(searchCtaRef);
                           }}
                           className={premiumTop
                             ? clsx(
@@ -1117,7 +1178,10 @@ export function HomePage({ premiumTop = false }: { premiumTop?: boolean }) {
             </div>
 
             {selectedClub && selectedCourtId && selectedTime && (
-              <div className="mt-8 lg:hidden">
+              <div
+                ref={searchCtaRef}
+                className={premiumTop ? "mt-10 scroll-mt-28" : "mt-8 lg:hidden"}
+              >
                 <Glass className="p-4">
                   <div className="text-sm font-semibold leading-relaxed">
                     {selectedClub.name}
