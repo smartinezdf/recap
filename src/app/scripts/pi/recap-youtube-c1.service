@@ -1,0 +1,17 @@
+[Unit]
+Description=ReCap YouTube Live - Court 1
+After=network-online.target recap-buffer-c1.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=recap-saquepadel1
+WorkingDirectory=/home/recap-saquepadel1/recap
+ExecStart=/bin/bash -lc 'exec /home/recap-saquepadel1/recap/youtube_test_c1.sh "$(cat /run/recap/c1-duration-seconds)"'
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target

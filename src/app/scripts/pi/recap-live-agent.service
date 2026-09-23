@@ -1,0 +1,15 @@
+[Unit]
+Description=ReCap Livestream Control Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/recap/live-control.env
+ExecStart=/usr/bin/python3 -u /home/recap-saquepadel1/recap/live_stream_agent.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
