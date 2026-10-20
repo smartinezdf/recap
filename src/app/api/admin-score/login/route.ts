@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
   const pin = (body as { pin?: unknown })?.pin;
-  if (typeof pin !== "string" || !/^\\d{4,12}$/.test(pin)) {
+  if (typeof pin !== "string" || !/^\d{4,12}$/.test(pin)) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
   const match = CLUBS.find(({ env }) => matches(pin, process.env[env]));
