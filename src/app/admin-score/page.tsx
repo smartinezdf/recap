@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+
 
 const ACCENT = "#3FCD31";
 
@@ -14,23 +14,17 @@ type ClubAccess = {
   logo: string;
 };
 
-const CLUB_PINS: Record<string, ClubAccess> = {
-  "9700": {
-    club: "Garana Padel",
-    sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Garana.PNG",
-  },
-  "4600": {
-    club: "Upadel",
-    sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
-  },
-  "0102": {
-    club: "Saque Padel Club",
-    sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Blanco%20con%20verde%20PNG.png",
-  },
-};
+const CLUBS: ClubAccess[] = [
+  { club: "Garana Padel", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Garana.PNG" },
+  { club: "Upadel", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG" },
+  { club: "Saque Padel Club", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Blanco%20con%20verde%20PNG.png" },
+];
+async function adminApi<T>(url: string, method = "GET", body?: unknown): Promise<T> {
+  const response = await fetch(url, { method, credentials: "same-origin", cache: "no-store", headers: body === undefined ? undefined : { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const json = await response.json();
+  if (!response.ok) throw new Error(json.error || "Error del servidor");
+  return json as T;
+}
 
 type EstadoPartido = "Pendiente" | "En juego" | "Terminado";
 type ModoTercerSet = "Tercer set completo" | "Super tiebreak";
@@ -185,35 +179,26 @@ export default function AdminScorePage() {
     setCargando(true);
     setErrorFormulario("");
 
-    const { data, error } = await supabase
-      .from("live_matches")
-      .select("*")
-      .eq("club", clubActual.club)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      setErrorFormulario(error.message);
+    try {
+      const { data } = await adminApi<{ data: Partido[] }>("/api/admin-score/matches");
+      setPartidos(data || []);
+    } catch (error) {
+      setErrorFormulario(error instanceof Error ? error.message : "Error al cargar");
       setPartidos([]);
-    } else {
-      setPartidos((data || []) as Partido[]);
-    }
-
-    setCargando(false);
+    } finally { setCargando(false); }
   }
 
-  function entrarConPin() {
-    const club = CLUB_PINS[pin.trim()];
-
-    if (!club) {
-      setPinError("PIN incorrecto.");
-      return;
-    }
-
-    setClubActual(club);
-    setPin("");
-    setPinError("");
-    setCanchaSeleccionada("Cancha 1");
-    setForm({ ...formularioVacio("Cancha 1"), sport: club.sport });
+  async function entrarConPin() {
+    try {
+      const { club: clubName } = await adminApi<{ club: string }>("/api/admin-score/login", "POST", { pin: pin.trim() });
+      const club = CLUBS.find(item => item.club === clubName);
+      if (!club) throw new Error("Club no reconocido");
+      setClubActual(club);
+      setPin("");
+      setPinError("");
+      setCanchaSeleccionada("Cancha 1");
+      setForm({ ...formularioVacio("Cancha 1"), sport: club.sport });
+    } catch (error) { setPinError(error instanceof Error ? error.message : "PIN incorrecto"); }
   }
 
   function seleccionarCancha(cancha: string) {
@@ -259,26 +244,13 @@ export default function AdminScorePage() {
     if (!validarFormulario()) return;
 
     if (editandoId) {
-      const { error } = await supabase
-        .from("live_matches")
-        .update({
-          club: clubActual.club,
-          sport: clubActual.sport,
-          cancha: canchaSeleccionada,
-          tournament: form.tournament,
-          category: form.category,
-          round: form.round,
-          match_time: form.match_time,
-          team_a: form.team_a,
-          team_b: form.team_b,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editandoId);
-
-      if (error) {
-        setErrorFormulario(error.message);
-        return;
-      }
+      try {
+        await adminApi("/api/admin-score/matches/" + encodeURIComponent(editandoId), "PATCH", {
+          sport: clubActual.sport, cancha: canchaSeleccionada, tournament: form.tournament,
+          category: form.category, round: form.round, match_time: form.match_time,
+          team_a: form.team_a, team_b: form.team_b
+        });
+      } catch (error) { setErrorFormulario(error instanceof Error ? error.message : "Error al editar"); return; }
 
       const idActualizado = editandoId;
       setEditandoId(null);
@@ -303,33 +275,17 @@ export default function AdminScorePage() {
             { a: "0", b: "0" },
           ];
 
-    const { data, error } = await supabase
-      .from("live_matches")
-      .insert({
-        club: clubActual.club,
-        sport: clubActual.sport,
-        cancha: canchaSeleccionada,
-        tournament: form.tournament,
-        category: form.category,
-        round: form.round,
-        match_time: form.match_time,
-        team_a: form.team_a,
-        team_b: form.team_b,
-        status: form.status,
-        third_set_mode: form.third_set_mode,
-        sets: initialSets,
-        game_a: "0",
-        game_b: "0",
-        serving: "A",
-        server_number: 1,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      setErrorFormulario(error.message);
-      return;
-    }
+    let data: Partido;
+    try {
+      const result = await adminApi<{ data: Partido }>("/api/admin-score/matches", "POST", {
+        sport: clubActual.sport, cancha: canchaSeleccionada, tournament: form.tournament,
+        category: form.category, round: form.round, match_time: form.match_time,
+        team_a: form.team_a, team_b: form.team_b, status: form.status,
+        third_set_mode: form.third_set_mode, sets: initialSets, game_a: "0",
+        game_b: "0", serving: "A", server_number: 1
+      });
+      data = result.data;
+    } catch (error) { setErrorFormulario(error instanceof Error ? error.message : "Error al guardar"); return; }
 
     setForm({
       ...formularioVacio(canchaSeleccionada),
@@ -376,18 +332,9 @@ export default function AdminScorePage() {
   }
 
   async function updateMatch(id: string, cambios: Partial<Partido>) {
-    const { error } = await supabase
-      .from("live_matches")
-      .update({
-        ...cambios,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-
-    if (error) {
-      setErrorFormulario(error.message);
-      return;
-    }
+    try {
+      await adminApi("/api/admin-score/matches/" + encodeURIComponent(id), "PATCH", cambios);
+    } catch (error) { setErrorFormulario(error instanceof Error ? error.message : "Error al actualizar"); return; }
 
     setPartidos((actual) =>
       actual.map((partido) =>
@@ -399,12 +346,9 @@ export default function AdminScorePage() {
   async function eliminarPartido(id: string) {
     if (!window.confirm("¿Eliminar este partido?")) return;
 
-    const { error } = await supabase.from("live_matches").delete().eq("id", id);
-
-    if (error) {
-      setErrorFormulario(error.message);
-      return;
-    }
+    try {
+      await adminApi("/api/admin-score/matches/" + encodeURIComponent(id), "DELETE");
+    } catch (error) { setErrorFormulario(error instanceof Error ? error.message : "Error al eliminar"); return; }
 
     setPartidos((actual) => actual.filter((partido) => partido.id !== id));
 
@@ -703,7 +647,7 @@ export default function AdminScorePage() {
           </p>
 
           <div className="mb-6 grid gap-3">
-            {Object.values(CLUB_PINS).map((club) => (
+            {CLUBS.map((club) => (
               <div
                 key={club.club}
                 className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3"
