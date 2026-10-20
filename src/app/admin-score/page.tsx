@@ -20,11 +20,6 @@ const CLUB_PINS: Record<string, ClubAccess> = {
     sport: "padel",
     logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Garana.PNG",
   },
-  "4600": {
-    club: "Upadel",
-    sport: "padel",
-    logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG",
-  },
   "0102": {
     club: "Saque Padel Club",
     sport: "padel",
