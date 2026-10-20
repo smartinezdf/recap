@@ -16,7 +16,6 @@ type ClubAccess = {
 
 const CLUBS: ClubAccess[] = [
   { club: "Garana Padel", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Garana.PNG" },
-  { club: "Upadel", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Upadel.JPG" },
   { club: "Saque Padel Club", sport: "padel", logo: "https://pub-a24ccb8eb0ea4e87b2bc39e6e975dafc.r2.dev/club-logos/Blanco%20con%20verde%20PNG.png" },
 ];
 async function adminApi<T>(url: string, method = "GET", body?: unknown): Promise<T> {
